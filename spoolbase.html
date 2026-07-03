@@ -107,6 +107,15 @@ select,input[type=text],input[type=number],input[type=date]{
 select:focus,input:focus{outline:2px solid var(--amber);outline-offset:1px;}
 
 .material-list{display:flex;flex-direction:column;gap:2px;margin-top:auto;}
+
+.page-nav{display:flex;flex-direction:column;gap:4px;}
+.page-nav-btn{
+  background:transparent;border:1px solid transparent;color:var(--muted);
+  text-align:left;padding:10px 12px;border-radius:8px;font-size:13.5px;
+  cursor:pointer;font-family:var(--font-body);font-weight:600;
+}
+.page-nav-btn:hover{background:var(--surface-2);color:var(--text);}
+.page-nav-btn.active{background:var(--amber-dim);color:var(--amber);border-color:var(--amber);}
 .mat-chip{
   display:flex;
   justify-content:space-between;
@@ -209,6 +218,15 @@ table.spool-table .tbl-actions button:hover{color:var(--text);border-color:var(-
   border-radius:6px;padding:9px 10px;cursor:pointer;flex-shrink:0;
 }
 .calc-row button:hover{border-color:var(--red);}
+
+.fleet-row{display:flex;gap:8px;align-items:center;}
+.fleet-row input[type=text]{flex:2;}
+.fleet-row input[type=number]{flex:1;}
+.fleet-row button{
+  background:var(--surface-2);border:1px solid var(--line);color:var(--red);
+  border-radius:6px;padding:9px 10px;cursor:pointer;flex-shrink:0;
+}
+.fleet-row button:hover{border-color:var(--red);}
 
 .group-card{
   grid-column:1/-1;
@@ -406,6 +424,13 @@ label{
     </div>
     <div id="storage-indicator" style="font-size:11px;font-family:var(--font-mono);padding:8px 10px;background:var(--surface-2);border-radius:7px;border:1px solid var(--line);"></div>
 
+    <nav class="page-nav">
+      <button class="page-nav-btn active" data-page="filamenti">📦 Filamenti</button>
+      <button class="page-nav-btn" data-page="stampanti">🖨 Stampanti</button>
+      <button class="page-nav-btn" data-page="ricambi">🔧 Ricambi manutenzione</button>
+    </nav>
+
+    <div id="sidebar-filamenti-extra">
     <div class="stat-row">
       <div class="stat-block">
         <div class="n" id="stat-total">0</div>
@@ -466,9 +491,11 @@ label{
     </div>
 
     <div class="material-list" id="material-breakdown"></div>
+    </div>
   </aside>
 
   <main class="main">
+    <div id="page-filamenti">
     <div class="topbar">
       <div>
         <h1>Magazzino filamenti</h1>
@@ -496,6 +523,37 @@ label{
       <svg width="52" height="52" viewBox="0 0 52 52" fill="none"><circle cx="26" cy="26" r="22" stroke="#8d8c93" stroke-width="2.5"/><circle cx="26" cy="26" r="7" stroke="#8d8c93" stroke-width="2.5"/></svg>
       <h3>Nessuna bobina qui</h3>
       <p>Aggiungi la prima bobina o cambia i filtri.</p>
+    </div>
+    </div>
+
+    <div id="page-stampanti" style="display:none">
+      <div class="topbar">
+        <div>
+          <h1>Stampanti</h1>
+          <p>Gestisci la flotta: aggiungi, modifica o rimuovi stampanti e la loro potenza.</p>
+        </div>
+      </div>
+      <div id="fleet-page-rows" style="display:flex;flex-direction:column;gap:10px;max-width:640px;"></div>
+      <button class="btn" id="btn-fleet-page-add" type="button" style="margin-top:14px;">+ Aggiungi stampante</button>
+      <p class="hint" style="max-width:640px;">Le stampanti aggiunte qui compaiono automaticamente nel calcolatore "Costo stampa" — nessun'altra modifica necessaria quando amplii la flotta.</p>
+    </div>
+
+    <div id="page-ricambi" style="display:none">
+      <div class="topbar">
+        <div>
+          <h1>Ricambi e manutenzione</h1>
+          <p>Scorte di ugelli, cinghie, cuscinetti e altri ricambi per le tue stampanti.</p>
+        </div>
+        <div class="searchbar">
+          <input type="text" id="ricambi-search" placeholder="Cerca ricambio, categoria, stampante...">
+          <button class="btn" id="btn-ricambio-add">+ Nuovo ricambio</button>
+        </div>
+      </div>
+      <div class="grid" id="ricambi-grid"></div>
+      <div class="empty-state" id="ricambi-empty" style="display:none">
+        <h3>Nessun ricambio in magazzino</h3>
+        <p>Aggiungi ugelli, cinghie, cuscinetti o altri pezzi di ricambio.</p>
+      </div>
     </div>
   </main>
 </div>
@@ -618,6 +676,92 @@ label{
   </div>
 </div>
 
+<div class="overlay" id="overlay-ricambio" style="display:none">
+  <div class="modal">
+    <h2 id="ricambio-modal-title">Nuovo ricambio</h2>
+    <input type="hidden" id="r-id">
+
+    <div class="form-row">
+      <div>
+        <label>Nome ricambio</label>
+        <input type="text" id="r-nome" list="ricambi-nomi-list" placeholder="es. Ugello 0.4mm, Piatto in vetro, Tubo PTFE...">
+        <datalist id="ricambi-nomi-list"></datalist>
+      </div>
+      <div>
+        <label>Categoria</label>
+        <input type="text" id="r-categoria" list="ricambi-cat-list" placeholder="es. Ugelli">
+        <datalist id="ricambi-cat-list">
+          <option value="Ugelli"><option value="Piatti"><option value="Tubi PTFE">
+          <option value="Estrusori"><option value="Cinghie"><option value="Cuscinetti">
+          <option value="Ventole"><option value="Hotend"><option value="Elettronica">
+          <option value="Viti/Bulloneria"><option value="Altro">
+        </datalist>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div>
+        <label>Stampante compatibile</label>
+        <select id="r-stampante">
+          <option value="Tutte">Tutte le stampanti</option>
+        </select>
+      </div>
+      <div>
+        <label>Fornitore / link (opzionale)</label>
+        <input type="text" id="r-fornitore" placeholder="es. Amazon, negozio locale...">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div>
+        <label>Quantità in scorta</label>
+        <input type="number" id="r-quantita" min="0" value="5">
+      </div>
+      <div>
+        <label>Soglia minima (avviso scorta bassa)</label>
+        <input type="number" id="r-quantita-min" min="0" value="2">
+      </div>
+    </div>
+
+    <div>
+      <label>Prezzo unitario (€, opzionale)</label>
+      <input type="number" id="r-prezzo" min="0" step="0.01" value="0">
+    </div>
+
+    <div>
+      <label>Note</label>
+      <input type="text" id="r-note" placeholder="es. compatibile solo con hotend all-metal...">
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn secondary" id="btn-ricambio-cancel">Annulla</button>
+      <button class="btn danger" id="btn-ricambio-delete" style="display:none">Elimina</button>
+      <button class="btn" id="btn-ricambio-save">Salva ricambio</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay-use" style="display:none">
+  <div class="modal" style="max-width:380px">
+    <h2>Registra utilizzo</h2>
+    <div id="use-spool-name" style="font-size:13px;color:var(--muted);margin-bottom:14px;"></div>
+    <div>
+      <label>Grammi consumati</label>
+      <input type="number" id="use-grammi" min="1" value="50" style="font-size:18px;padding:12px;">
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px;">
+      <button type="button" class="btn secondary use-quick" data-g="20" style="flex:1;">20g</button>
+      <button type="button" class="btn secondary use-quick" data-g="50" style="flex:1;">50g</button>
+      <button type="button" class="btn secondary use-quick" data-g="100" style="flex:1;">100g</button>
+      <button type="button" class="btn secondary use-quick" data-g="200" style="flex:1;">200g</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn secondary" id="btn-use-close">Annulla</button>
+      <button class="btn" id="btn-use-confirm">Conferma</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="overlay-consumi" style="display:none">
   <div class="modal" style="max-width:640px">
     <h2>Monitoraggio consumi</h2>
@@ -672,22 +816,14 @@ label{
       <div></div>
     </div>
 
-    <details style="margin-top:16px;">
+    <p class="hint">🖨 Le stampanti si gestiscono ora dalla pagina "Stampanti" nel menu a sinistra.</p>
+
+    <details style="margin-top:10px;">
       <summary style="cursor:pointer;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">⚙ Impostazioni costi (modifica se cambiano)</summary>
       <div class="form-row" style="margin-top:12px;">
         <div>
           <label>Costo energia (€/kWh)</label>
           <input type="number" id="cfg-kwh" min="0" step="0.01" value="0.40">
-        </div>
-        <div>
-          <label>Potenza grande (W)</label>
-          <input type="number" id="cfg-watt-big" min="0" value="500">
-        </div>
-      </div>
-      <div class="form-row">
-        <div>
-          <label>Potenza piccola (W)</label>
-          <input type="number" id="cfg-watt-small" min="0" value="400">
         </div>
         <div>
           <label>Investimento totale (€)</label>
@@ -1060,7 +1196,7 @@ function spoolCardHtml(s){
       <div class="card-actions">
         <button data-act="edit" data-id="${s.id}">Modifica</button>
         <button data-act="copy" data-id="${s.id}">Copia</button>
-        <button data-act="use" data-id="${s.id}">− 50g</button>
+        <button data-act="use" data-id="${s.id}">− Usa</button>
         <button data-act="delete" data-id="${s.id}" style="color:var(--red)">Elimina</button>
       </div>
     </div>
@@ -1155,7 +1291,7 @@ function renderTable(list){
       <td class="tbl-actions">
         <button data-act="edit" data-id="${s.id}">Modifica</button>
         <button data-act="copy" data-id="${s.id}">Copia</button>
-        <button data-act="use" data-id="${s.id}">−50g</button>
+        <button data-act="use" data-id="${s.id}">− Usa</button>
         <button data-act="delete" data-id="${s.id}" style="color:var(--red)">Elimina</button>
       </td>
     </tr>`;
@@ -1194,14 +1330,38 @@ function handleSpoolAction(act, id){
       saveSpools(); render();
     }
   } else if(act === 'use'){
-    const usedG = Math.min(50, spool.pesoRim);
-    spool.pesoRim = Math.max(0, spool.pesoRim - 50);
-    if(spool.stato === 'nuova') spool.stato = 'aperta';
-    if(spool.pesoRim === 0) spool.stato = 'esaurita';
-    logConsumption(spool, usedG, 'manuale');
-    saveSpools(); render();
+    openUseModal(spool);
   }
 }
+
+/* ---------- MODALE UTILIZZO PERSONALIZZATO ---------- */
+let useSpoolId = null;
+function openUseModal(spool){
+  useSpoolId = spool.id;
+  $('#use-spool-name').textContent = `${spool.coloreNome} · ${spool.materiale} · ${spool.marca||'—'} (${spool.pesoRim}g rimasti)`;
+  $('#use-grammi').value = Math.min(50, spool.pesoRim) || 1;
+  $('#overlay-use').style.display = 'flex';
+  setTimeout(()=>$('#use-grammi').select(), 50);
+}
+$('#btn-use-close').addEventListener('click', ()=>$('#overlay-use').style.display='none');
+$('#overlay-use').addEventListener('click', e=>{ if(e.target.id==='overlay-use') $('#overlay-use').style.display='none'; });
+$('#overlay-use').querySelectorAll('.use-quick').forEach(btn=>{
+  btn.addEventListener('click', ()=>{ $('#use-grammi').value = btn.dataset.g; });
+});
+$('#use-grammi').addEventListener('keydown', e=>{ if(e.key==='Enter') $('#btn-use-confirm').click(); });
+$('#btn-use-confirm').addEventListener('click', async ()=>{
+  const spool = spools.find(s=>s.id===useSpoolId);
+  const grammi = Number($('#use-grammi').value) || 0;
+  if(!spool || grammi<=0) return;
+  const usedG = Math.min(grammi, spool.pesoRim);
+  spool.pesoRim = Math.max(0, spool.pesoRim - grammi);
+  if(spool.stato === 'nuova') spool.stato = 'aperta';
+  if(spool.pesoRim === 0) spool.stato = 'esaurita';
+  await logConsumption(spool, usedG, 'manuale');
+  await saveSpools();
+  $('#overlay-use').style.display = 'none';
+  render();
+});
 
 function openModal(spool, duplicate=false){
   editingId = (spool && !duplicate) ? spool.id : null;
@@ -1284,6 +1444,169 @@ $('#btn-delete').addEventListener('click', async ()=>{
 
 loadSpools();
 loadConsumptionLog();
+loadPrinterFleet();
+loadRicambi();
+
+/* ---------- NAVIGAZIONE PAGINE ---------- */
+function switchPage(page){
+  $('#page-filamenti').style.display = page==='filamenti' ? '' : 'none';
+  $('#page-stampanti').style.display = page==='stampanti' ? '' : 'none';
+  $('#page-ricambi').style.display = page==='ricambi' ? '' : 'none';
+  $('#sidebar-filamenti-extra').style.display = page==='filamenti' ? '' : 'none';
+  document.querySelectorAll('.page-nav-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.page===page);
+  });
+  if(page==='stampanti') renderFleetRows();
+  if(page==='ricambi') renderRicambi();
+}
+document.querySelectorAll('.page-nav-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>switchPage(btn.dataset.page));
+});
+
+/* ---------- RICAMBI E MANUTENZIONE ---------- */
+const RICAMBI_KEY = 'maintenance_parts';
+let ricambi = [];
+let editingRicambioId = null;
+
+async function loadRicambi(){
+  try{
+    const res = await storageGet(RICAMBI_KEY);
+    ricambi = res && res.value ? JSON.parse(res.value) : [];
+  }catch(e){
+    ricambi = [];
+  }
+}
+async function saveRicambi(){
+  await storageSet(RICAMBI_KEY, JSON.stringify(ricambi));
+}
+
+function renderRicambi(){
+  const q = ($('#ricambi-search').value||'').trim().toLowerCase();
+  const list = ricambi.filter(r=>{
+    if(!q) return true;
+    const blob = `${r.nome} ${r.categoria} ${r.stampante} ${r.fornitore||''}`.toLowerCase();
+    return blob.includes(q);
+  });
+  const container = $('#ricambi-grid');
+  $('#ricambi-empty').style.display = list.length ? 'none' : 'block';
+  container.innerHTML = list.map(r=>{
+    const low = r.quantita <= r.quantitaMin;
+    return `
+    <div class="card ${low?'low':''}">
+      ${low ? '<div class="low-flag" title="Scorta bassa"></div>' : ''}
+      <div class="card-title">
+        <div class="mat">${r.categoria || 'Ricambio'}</div>
+        <h3>${r.nome}</h3>
+        <div class="brand-line">${r.stampante || 'Tutte le stampanti'}</div>
+      </div>
+      <div class="card-meta">
+        <span>Scorta: <b style="${low?'color:var(--red)':''}">${r.quantita} pz</b></span>
+        <span>Soglia minima: <b>${r.quantitaMin} pz</b></span>
+      </div>
+      ${Number(r.prezzo)>0 ? `<div class="card-meta">
+        <span>Prezzo unitario: <b>€${Number(r.prezzo).toFixed(2)}</b></span>
+        <span>Valore scorta: <b>€${(Number(r.prezzo)*r.quantita).toFixed(2)}</b></span>
+      </div>` : ''}
+      ${r.fornitore ? `<div style="font-size:11.5px;color:var(--muted);">Fornitore: ${r.fornitore}</div>` : ''}
+      ${r.note ? `<div style="font-size:11.5px;color:var(--muted);">${r.note}</div>` : ''}
+      <div class="card-actions">
+        <button data-ract="edit" data-id="${r.id}">Modifica</button>
+        <button data-ract="use" data-id="${r.id}">− Usa 1</button>
+        <button data-ract="add" data-id="${r.id}">+ Ricevi</button>
+        <button data-ract="delete" data-id="${r.id}" style="color:var(--red)">Elimina</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+$('#ricambi-search').addEventListener('input', renderRicambi);
+
+$('#ricambi-grid').addEventListener('click', async e=>{
+  const btn = e.target.closest('button[data-ract]');
+  if(!btn) return;
+  const id = btn.dataset.id;
+  const r = ricambi.find(x=>x.id===id);
+  if(!r) return;
+  if(btn.dataset.ract==='edit'){
+    openRicambioModal(r);
+  } else if(btn.dataset.ract==='delete'){
+    if(confirm(`Eliminare "${r.nome}" dai ricambi?`)){
+      ricambi = ricambi.filter(x=>x.id!==id);
+      await saveRicambi(); renderRicambi();
+    }
+  } else if(btn.dataset.ract==='use'){
+    r.quantita = Math.max(0, r.quantita-1);
+    await saveRicambi(); renderRicambi();
+  } else if(btn.dataset.ract==='add'){
+    r.quantita = r.quantita+1;
+    await saveRicambi(); renderRicambi();
+  }
+});
+
+$('#btn-ricambio-add').addEventListener('click', ()=>openRicambioModal(null));
+
+function populateRicambiSelects(){
+  const sel = $('#r-stampante');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="Tutte">Tutte le stampanti</option>' +
+    printerFleet.map(p=>`<option value="${p.nome}">${p.nome}</option>`).join('');
+  sel.value = cur || 'Tutte';
+
+  const nomi = [...new Set(ricambi.map(r=>r.nome))];
+  $('#ricambi-nomi-list').innerHTML = nomi.map(n=>`<option value="${n}">`).join('');
+}
+
+function openRicambioModal(r){
+  editingRicambioId = r ? r.id : null;
+  populateRicambiSelects();
+  $('#ricambio-modal-title').textContent = r ? 'Modifica ricambio' : 'Nuovo ricambio';
+  $('#btn-ricambio-delete').style.display = r ? 'inline-block' : 'none';
+  $('#r-id').value = r ? r.id : '';
+  $('#r-nome').value = r ? r.nome : '';
+  $('#r-categoria').value = r ? r.categoria : '';
+  $('#r-stampante').value = r ? (r.stampante||'Tutte') : 'Tutte';
+  $('#r-quantita').value = r ? r.quantita : 5;
+  $('#r-quantita-min').value = r ? r.quantitaMin : 2;
+  $('#r-prezzo').value = r ? (r.prezzo||0) : 0;
+  $('#r-fornitore').value = r ? (r.fornitore||'') : '';
+  $('#r-note').value = r ? (r.note||'') : '';
+  $('#overlay-ricambio').style.display = 'flex';
+}
+function closeRicambioModal(){ $('#overlay-ricambio').style.display = 'none'; editingRicambioId = null; }
+
+$('#btn-ricambio-cancel').addEventListener('click', closeRicambioModal);
+$('#overlay-ricambio').addEventListener('click', e=>{ if(e.target.id==='overlay-ricambio') closeRicambioModal(); });
+
+$('#btn-ricambio-save').addEventListener('click', async ()=>{
+  const nome = $('#r-nome').value.trim();
+  if(!nome){ alert('Inserisci il nome del ricambio.'); return; }
+  const categoria = $('#r-categoria').value.trim() || 'Altro';
+  const stampante = $('#r-stampante').value;
+  const quantita = Number($('#r-quantita').value) || 0;
+  const quantitaMin = Number($('#r-quantita-min').value) || 0;
+  const prezzo = Number($('#r-prezzo').value) || 0;
+  const fornitore = $('#r-fornitore').value.trim();
+  const note = $('#r-note').value.trim();
+
+  if(editingRicambioId){
+    const r = ricambi.find(x=>x.id===editingRicambioId);
+    Object.assign(r, {nome, categoria, stampante, quantita, quantitaMin, prezzo, fornitore, note});
+  } else {
+    ricambi.push({id: uid(), nome, categoria, stampante, quantita, quantitaMin, prezzo, fornitore, note, createdAt: Date.now()});
+  }
+  await saveRicambi();
+  closeRicambioModal();
+  renderRicambi();
+});
+
+$('#btn-ricambio-delete').addEventListener('click', async ()=>{
+  if(!editingRicambioId) return;
+  if(!confirm('Eliminare questo ricambio dal magazzino?')) return;
+  ricambi = ricambi.filter(x=>x.id!==editingRicambioId);
+  await saveRicambi();
+  closeRicambioModal();
+  renderRicambi();
+});
 
 $('#btn-export').addEventListener('click', ()=>{
   const blob = new Blob([JSON.stringify(spools, null, 2)], {type:'application/json'});
@@ -1409,21 +1732,80 @@ $('#overlay-stats').addEventListener('click', e=>{ if(e.target.id==='overlay-sta
 
 /* ---------- CALCOLATORE COSTO STAMPA COMPLETO ---------- */
 const CFG_KEY = 'cost_settings';
-const cfgIds = ['cfg-kwh','cfg-watt-big','cfg-watt-small','cfg-investimento','cfg-anni','cfg-ore-giorno','cfg-manutenzione','cfg-scarto','cfg-ricarico','cfg-iva',
+const cfgIds = ['cfg-kwh','cfg-investimento','cfg-anni','cfg-ore-giorno','cfg-manutenzione','cfg-scarto','cfg-ricarico','cfg-iva',
   'cfg-nome-attivita','cfg-piva','cfg-email','cfg-telefono','cfg-indirizzo'];
 let calcRows = []; // [{rowId, spoolId, grammi}]
 let printerRows = []; // [{rowId, printer, ore}]
 
-const PRINTER_OPTIONS = [
-  {value:'k2plus', label:'K2 Plus (grande)'},
-  {value:'k1c-1', label:'K1C #1 (piccola)'},
-  {value:'k1c-2', label:'K1C #2 (piccola)'},
-];
+/* ---------- FLOTTA STAMPANTI (gestibile) ---------- */
+const FLEET_KEY = 'printer_fleet';
+let printerFleet = [];
 
-function printerWatt(printer){
-  const wattBig = Number($('#cfg-watt-big').value) || 0;
-  const wattSmall = Number($('#cfg-watt-small').value) || 0;
-  return printer === 'k2plus' ? wattBig : wattSmall;
+async function loadPrinterFleet(){
+  try{
+    const res = await storageGet(FLEET_KEY);
+    printerFleet = res && res.value ? JSON.parse(res.value) : [];
+  }catch(e){
+    printerFleet = [];
+  }
+  if(!printerFleet.length){
+    printerFleet = [
+      {id: uid(), nome:'K2 Plus (grande)', watt:500},
+      {id: uid(), nome:'K1C #1 (piccola)', watt:400},
+      {id: uid(), nome:'K1C #2 (piccola)', watt:400},
+    ];
+    await savePrinterFleet();
+  }
+  renderFleetRows();
+}
+async function savePrinterFleet(){
+  await storageSet(FLEET_KEY, JSON.stringify(printerFleet));
+}
+
+function renderFleetRows(){
+  const container = $('#fleet-page-rows');
+  if(!container) return;
+  container.innerHTML = printerFleet.map(p=>`
+    <div class="fleet-row" data-id="${p.id}" style="background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;">
+      <input type="text" class="fleet-nome" value="${p.nome}" placeholder="Nome stampante">
+      <input type="number" class="fleet-watt" value="${p.watt}" min="0" placeholder="Watt">
+      <span style="color:var(--muted);font-size:12px;flex-shrink:0;">W</span>
+      <button type="button" class="fleet-remove" title="Rimuovi dalla flotta">✕</button>
+    </div>
+  `).join('') || '<div style="color:var(--muted);font-size:13px;">Nessuna stampante in flotta.</div>';
+
+  container.querySelectorAll('.fleet-row').forEach(el=>{
+    const id = el.dataset.id;
+    el.querySelector('.fleet-nome').addEventListener('input', async e=>{
+      printerFleet.find(p=>p.id===id).nome = e.target.value;
+      await savePrinterFleet();
+      renderPrinterRows();
+    });
+    el.querySelector('.fleet-watt').addEventListener('input', async e=>{
+      printerFleet.find(p=>p.id===id).watt = Number(e.target.value)||0;
+      await savePrinterFleet();
+      updateCalc();
+    });
+    el.querySelector('.fleet-remove').addEventListener('click', async ()=>{
+      printerFleet = printerFleet.filter(p=>p.id!==id);
+      printerRows = printerRows.filter(r=>r.printer!==id);
+      await savePrinterFleet();
+      renderFleetRows();
+      renderPrinterRows();
+      updateCalc();
+    });
+  });
+}
+$('#btn-fleet-page-add').addEventListener('click', async ()=>{
+  printerFleet.push({id: uid(), nome:'Nuova stampante', watt:400});
+  await savePrinterFleet();
+  renderFleetRows();
+  renderPrinterRows();
+});
+
+function printerWatt(printerId){
+  const p = printerFleet.find(p=>p.id===printerId);
+  return p ? Number(p.watt)||0 : 0;
 }
 
 function renderPrinterRows(){
@@ -1431,7 +1813,7 @@ function renderPrinterRows(){
   container.innerHTML = printerRows.map(row=>`
     <div class="calc-row" data-row="${row.rowId}">
       <select class="printer-row-select">
-        ${PRINTER_OPTIONS.map(p=>`<option value="${p.value}" ${p.value===row.printer?'selected':''}>${p.label}</option>`).join('')}
+        ${printerFleet.map(p=>`<option value="${p.id}" ${p.id===row.printer?'selected':''}>${p.nome} (${p.watt}W)</option>`).join('')}
       </select>
       <input type="number" class="printer-row-ore" min="0" step="0.1" value="${row.ore}" placeholder="ore">
       <button type="button" class="printer-row-remove" title="Rimuovi stampante">✕</button>
@@ -1457,7 +1839,8 @@ function renderPrinterRows(){
 }
 
 $('#btn-calc-add-printer').addEventListener('click', ()=>{
-  printerRows.push({rowId: uid(), printer:'k2plus', ore:3});
+  const def = printerFleet[0] ? printerFleet[0].id : '';
+  printerRows.push({rowId: uid(), printer:def, ore:3});
   renderPrinterRows();
   updateCalc();
 });
@@ -1480,7 +1863,9 @@ async function saveCostSettings(){
 function openCalc(){
   const usable = spools.filter(s=>s.stato!=='esaurita');
   calcRows = usable.length ? [{rowId: uid(), spoolId: usable[0].id, grammi: 50}] : [];
-  printerRows = [{rowId: uid(), printer:'k2plus', ore:3}];
+  const defPrinter = printerFleet[0] ? printerFleet[0].id : '';
+  printerRows = defPrinter ? [{rowId: uid(), printer:defPrinter, ore:3}] : [];
+  renderFleetRows();
   renderCalcRows();
   renderPrinterRows();
   updateCalc();
@@ -1553,7 +1938,7 @@ function updateCalc(){
   let energiaCost = 0, overheadCost = 0, printerRighe = [];
   printerRows.forEach(row=>{
     const watt = printerWatt(row.printer);
-    const label = PRINTER_OPTIONS.find(p=>p.value===row.printer)?.label || row.printer;
+    const label = printerFleet.find(p=>p.id===row.printer)?.nome || row.printer;
     const e = (watt/1000) * kwhPrice * row.ore;
     const o = overheadOraPerMacchina * row.ore;
     energiaCost += e;
@@ -1629,8 +2014,9 @@ function buildPreventivo(){
     if(!spool) return;
     filamentoBase += (costPerKg(spool)/1000) * row.grammi;
   });
-  const filamentoConScarto = filamentoBase * (1 + scartoPct/100);
-  const filamentoPreventivo = filamentoConScarto * (1 + ricaricoPct/100);
+  // Il ricarico per il preventivo si applica sul costo base del filamento,
+  // NON su quello già maggiorato dallo scarto interno (altrimenti si sommano due volte)
+  const filamentoPreventivo = filamentoBase * (1 + ricaricoPct/100);
 
   const imponibile = filamentoPreventivo + energiaCost + overheadCost + extra + pre + post;
   const iva = imponibile * (ivaPct/100);
@@ -1673,7 +2059,7 @@ $('#btn-preventivo-close').addEventListener('click', ()=>$('#overlay-preventivo'
 $('#overlay-preventivo').addEventListener('click', e=>{ if(e.target.id==='overlay-preventivo') $('#overlay-preventivo').style.display='none'; });
 $('#btn-preventivo-print').addEventListener('click', ()=>{ window.print(); });
 ['#calc-extra','#calc-pre','#calc-post',
- '#cfg-kwh','#cfg-watt-big','#cfg-watt-small','#cfg-investimento','#cfg-anni','#cfg-ore-giorno','#cfg-manutenzione','#cfg-scarto','#cfg-ricarico','#cfg-iva']
+ '#cfg-kwh','#cfg-investimento','#cfg-anni','#cfg-ore-giorno','#cfg-manutenzione','#cfg-scarto','#cfg-ricarico','#cfg-iva']
   .forEach(sel=>{ $(sel).addEventListener('input', updateCalc); $(sel).addEventListener('change', updateCalc); });
 
 $('#btn-calc-apply').addEventListener('click', async ()=>{
