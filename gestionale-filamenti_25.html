@@ -1,0 +1,3539 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Magazzino Filamenti</title>
+<style>
+:root{
+  --bg:#17171b;
+  --surface:#212127;
+  --surface-2:#2a2a32;
+  --line:#38383f;
+  --text:#ece9e2;
+  --muted:#8d8c93;
+  --amber:#ff8a3d;
+  --amber-dim:#5c3a22;
+  --teal:#49c7bd;
+  --teal-dim:#1f4744;
+  --red:#e2564f;
+  --red-dim:#4a2422;
+  --radius:10px;
+  --font-display:'Archivo','Segoe UI',sans-serif;
+  --font-body:'Inter','Segoe UI',sans-serif;
+  --font-mono:'JetBrains Mono','Consolas',monospace;
+}
+html[data-theme="light"]{
+  --bg:#f6f5f2;
+  --surface:#ffffff;
+  --surface-2:#eeece6;
+  --line:#dcd8d0;
+  --text:#232220;
+  --muted:#726f68;
+  --amber:#c15e12;
+  --amber-dim:#fbe3cf;
+  --teal:#0e8a80;
+  --teal-dim:#d7f3f0;
+  --red:#c23830;
+  --red-dim:#fbdcda;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--font-body);
+  min-height:100vh;
+}
+.app{display:flex;min-height:100vh;}
+
+/* ---------- SIDEBAR ---------- */
+.sidebar{
+  width:280px;
+  flex-shrink:0;
+  background:var(--surface);
+  border-right:1px solid var(--line);
+  padding:24px 20px;
+  display:flex;
+  flex-direction:column;
+  gap:24px;
+}
+.brand{
+  font-family:var(--font-display);
+  font-weight:800;
+  font-size:19px;
+  letter-spacing:-.02em;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.brand svg{flex-shrink:0;}
+.brand small{
+  display:block;
+  font-family:var(--font-mono);
+  font-weight:400;
+  font-size:11px;
+  color:var(--muted);
+  letter-spacing:.04em;
+  margin-top:2px;
+}
+.stat-block{
+  background:var(--surface-2);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:14px 16px;
+}
+.stat-block .n{
+  font-family:var(--font-mono);
+  font-size:28px;
+  font-weight:700;
+  color:var(--amber);
+  line-height:1;
+}
+.stat-block .l{
+  font-size:11px;
+  color:var(--muted);
+  margin-top:6px;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+}
+.stat-row{display:flex;gap:10px;}
+.stat-row .stat-block{flex:1;}
+
+.filter-group{display:flex;flex-direction:column;gap:6px;}
+.filter-group h4{
+  margin:0 0 4px;
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  color:var(--muted);
+  font-weight:600;
+}
+select,input[type=text],input[type=number],input[type=date]{
+  background:var(--surface-2);
+  border:1px solid var(--line);
+  color:var(--text);
+  border-radius:7px;
+  padding:9px 10px;
+  font-family:var(--font-body);
+  font-size:13.5px;
+  width:100%;
+}
+select:focus,input:focus{outline:2px solid var(--amber);outline-offset:1px;}
+
+.material-list{display:flex;flex-direction:column;gap:2px;margin-top:auto;}
+
+.page-nav{display:flex;flex-direction:column;gap:4px;}
+.page-nav-btn{
+  background:transparent;border:1px solid transparent;color:var(--muted);
+  text-align:left;padding:10px 12px;border-radius:8px;font-size:13.5px;
+  cursor:pointer;font-family:var(--font-body);font-weight:600;
+}
+.page-nav-btn:hover{background:var(--surface-2);color:var(--text);}
+.page-nav-btn.active{background:var(--amber-dim);color:var(--amber);border-color:var(--amber);}
+.mat-chip{
+  display:flex;
+  justify-content:space-between;
+  font-family:var(--font-mono);
+  font-size:12px;
+  color:var(--muted);
+  padding:5px 2px;
+  border-bottom:1px dashed var(--line);
+}
+.mat-chip span:last-child{color:var(--text);}
+
+/* ---------- MAIN ---------- */
+.main{flex:1;padding:28px 32px;overflow-y:auto;}
+.topbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:20px;
+  margin-bottom:22px;
+  flex-wrap:wrap;
+}
+.topbar h1{
+  font-family:var(--font-display);
+  font-size:26px;
+  margin:0 0 4px;
+  letter-spacing:-.01em;
+}
+.topbar p{margin:0;color:var(--muted);font-size:13.5px;}
+.searchbar{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+.searchbar input{width:220px;}
+.btn{
+  background:var(--amber);
+  color:#1a1208;
+  border:none;
+  border-radius:7px;
+  padding:10px 16px;
+  font-weight:700;
+  font-size:13.5px;
+  cursor:pointer;
+  font-family:var(--font-body);
+}
+.btn:hover{filter:brightness(1.08);}
+.btn.secondary{
+  background:transparent;
+  border:1px solid var(--line);
+  color:var(--text);
+}
+.btn.danger{background:var(--red);color:#2a0a08;}
+.btn.secondary.active-theme{border-color:var(--amber);color:var(--amber);background:var(--amber-dim);}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(270px,1fr));
+  gap:16px;
+}
+
+.view-toggle{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;}
+.view-toggle button{
+  background:var(--surface-2);border:none;color:var(--muted);
+  padding:9px 12px;cursor:pointer;font-size:15px;line-height:1;
+}
+.view-toggle button.active{background:var(--amber);color:#1a1208;}
+.view-toggle button:not(.active):hover{color:var(--text);}
+
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);}
+table.spool-table{width:100%;border-collapse:collapse;font-size:13px;}
+table.spool-table th{
+  text-align:left;padding:10px 12px;background:var(--surface-2);
+  color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em;
+  border-bottom:1px solid var(--line);white-space:nowrap;
+}
+table.spool-table td{
+  padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap;
+  font-family:var(--font-mono);
+}
+table.spool-table tr:last-child td{border-bottom:none;}
+table.spool-table tr:hover td{background:var(--surface-2);}
+table.spool-table .sw{width:14px;height:14px;border-radius:50%;display:inline-block;border:1px solid var(--line);vertical-align:middle;margin-right:8px;}
+table.spool-table .tbl-actions button{
+  background:var(--surface-2);border:1px solid var(--line);color:var(--muted);
+  border-radius:5px;padding:4px 8px;font-size:11.5px;cursor:pointer;margin-right:4px;font-family:var(--font-body);
+}
+table.spool-table .tbl-actions button:hover{color:var(--text);border-color:var(--amber);}
+
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.bar-label{width:130px;flex-shrink:0;font-size:12.5px;color:var(--text);font-family:var(--font-mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bar-track{flex:1;background:var(--surface-2);border-radius:5px;height:16px;overflow:hidden;}
+.bar-fill{height:100%;background:var(--amber);border-radius:5px;}
+.bar-value{width:70px;text-align:right;font-family:var(--font-mono);font-size:12.5px;color:var(--muted);flex-shrink:0;}
+
+.calc-row{display:flex;gap:8px;align-items:center;}
+.calc-row select{flex:2;}
+.calc-row input{flex:1;}
+.calc-row button{
+  background:var(--surface-2);border:1px solid var(--line);color:var(--red);
+  border-radius:6px;padding:9px 10px;cursor:pointer;flex-shrink:0;
+}
+.calc-row button:hover{border-color:var(--red);}
+
+.fleet-row{display:flex;gap:8px;align-items:center;}
+.fleet-row input[type=text]{flex:2;}
+.fleet-row input[type=number]{flex:1;}
+.fleet-row button{
+  background:var(--surface-2);border:1px solid var(--line);color:var(--red);
+  border-radius:6px;padding:9px 10px;cursor:pointer;flex-shrink:0;
+}
+.fleet-row button:hover{border-color:var(--red);}
+
+.group-card{
+  grid-column:1/-1;
+  background:var(--surface);
+  border:1.5px dashed var(--amber);
+  border-radius:var(--radius);
+  padding:14px 16px;
+}
+.group-header{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  cursor:pointer;
+}
+.group-header .sw-big{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);flex-shrink:0;}
+.group-header .ginfo{flex:1;min-width:0;}
+.group-header .ginfo h3{margin:0;font-family:var(--font-display);font-size:15.5px;}
+.group-header .ginfo .sub{font-size:12px;color:var(--muted);margin-top:2px;}
+.group-header .gcount{
+  background:var(--amber);color:#1a1208;font-weight:700;font-size:12px;
+  padding:4px 10px;border-radius:20px;flex-shrink:0;
+}
+.group-header .gstates{display:flex;gap:6px;flex-shrink:0;}
+.group-header .garrow{color:var(--muted);font-size:14px;flex-shrink:0;}
+.group-body{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(250px,1fr));
+  gap:12px;
+  margin-top:14px;
+  padding-top:14px;
+  border-top:1px dashed var(--line);
+}
+.card{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:16px;
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  transition:border-color .15s;
+}
+.card:hover{border-color:var(--amber);}
+.card.low{
+  border-color:var(--red);
+  background:linear-gradient(180deg, var(--red-dim) 0%, var(--surface) 60px);
+}
+.card.low:hover{border-color:var(--red);}
+.card.exhausted{
+  border-color:var(--muted);
+  background:linear-gradient(180deg, var(--surface-2) 0%, var(--surface) 60px);
+}
+.card.exhausted:hover{border-color:var(--muted);}
+.card-top{display:flex;gap:12px;align-items:center;}
+.spool-gauge{flex-shrink:0;}
+.card-title{flex:1;min-width:0;}
+.card-title .mat{
+  font-family:var(--font-mono);
+  font-size:11px;
+  color:var(--amber);
+  text-transform:uppercase;
+  letter-spacing:.06em;
+}
+.card-title h3{
+  margin:2px 0 0;
+  font-size:15.5px;
+  font-family:var(--font-display);
+  font-weight:700;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.card-title .brand-line{
+  font-size:12px;
+  color:var(--muted);
+  margin-top:2px;
+}
+.badge{
+  font-size:10.5px;
+  font-family:var(--font-mono);
+  padding:3px 8px;
+  border-radius:20px;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+  font-weight:600;
+  white-space:nowrap;
+}
+.badge.nuova{background:var(--teal-dim);color:var(--teal);}
+.badge.aperta{background:var(--amber-dim);color:var(--amber);}
+.badge.esaurita{background:var(--red-dim);color:var(--red);}
+.weeksum{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:12px 14px;
+}
+.weeksum-row{
+  display:flex;
+  align-items:flex-start;
+  gap:12px;
+  padding:6px 0;
+  border-bottom:1px solid var(--line);
+}
+.weeksum-row:last-child{border-bottom:none;}
+.weeksum-row b{
+  flex-shrink:0;
+  width:150px;
+  font-size:12.5px;
+  color:var(--muted);
+  text-transform:capitalize;
+}
+.weeksum-row.today b{color:var(--amber);}
+.weeksum-row.overdue b{color:var(--red);}
+.weeksum-items{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  flex:1;
+}
+.weeksum-items .muted{color:var(--muted);font-size:12.5px;}
+.ord-chip{
+  font-size:12px;
+  padding:3px 9px;
+  border-radius:20px;
+  background:var(--surface-2);
+  border:1px solid var(--line);
+  cursor:pointer;
+  white-space:nowrap;
+}
+.ord-chip:hover{border-color:var(--amber);}
+.weeksum-row.overdue .ord-chip{background:var(--red-dim);color:var(--red);}
+.weeksum-empty{color:var(--muted);font-size:13px;padding:4px 0;}
+.card.highlight-flash{
+  animation:flash-border 1.6s ease;
+}
+@keyframes flash-border{
+  0%{border-color:var(--amber);box-shadow:0 0 0 2px var(--amber-dim);}
+  100%{border-color:var(--line);box-shadow:none;}
+}
+.card-meta{
+  display:flex;
+  justify-content:space-between;
+  font-family:var(--font-mono);
+  font-size:12px;
+  color:var(--muted);
+  border-top:1px dashed var(--line);
+  padding-top:8px;
+}
+.card-meta b{color:var(--text);font-weight:600;}
+.card-actions{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.card-actions button{
+  flex:1;
+  background:var(--surface-2);
+  border:1px solid var(--line);
+  color:var(--muted);
+  border-radius:6px;
+  padding:7px;
+  font-size:12px;
+  cursor:pointer;
+}
+.card-actions button:hover{color:var(--text);border-color:var(--amber);}
+.low-flag{
+  position:absolute;top:12px;right:12px;
+  width:8px;height:8px;border-radius:50%;
+  background:var(--red);
+  box-shadow:0 0 0 3px var(--red-dim);
+}
+.exhausted-flag{
+  position:absolute;top:12px;right:12px;
+  font-size:14px;
+  opacity:.8;
+}
+.empty-state{
+  text-align:center;
+  padding:80px 20px;
+  color:var(--muted);
+}
+.empty-state svg{opacity:.4;margin-bottom:14px;}
+.empty-state h3{font-family:var(--font-display);color:var(--text);margin-bottom:6px;}
+
+/* ---------- MODAL ---------- */
+.overlay{
+  position:fixed;inset:0;background:rgba(10,10,12,.6);
+  display:flex;align-items:center;justify-content:center;
+  z-index:50;padding:20px;
+}
+.modal{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:14px;
+  width:100%;max-width:520px;
+  max-height:88vh;overflow-y:auto;
+  padding:26px;
+}
+.modal h2{
+  font-family:var(--font-display);
+  margin:0 0 18px;
+  font-size:20px;
+}
+.form-row{display:flex;gap:12px;margin-bottom:12px;}
+.form-row > div{flex:1;}
+label{
+  display:block;
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+  color:var(--muted);
+  margin-bottom:5px;
+  font-weight:600;
+}
+.color-swatch-row{display:flex;align-items:center;gap:8px;}
+.color-swatch-row input[type=color]{
+  width:44px;height:38px;padding:2px;border-radius:7px;border:1px solid var(--line);background:var(--surface-2);cursor:pointer;
+}
+.modal-actions{display:flex;gap:10px;margin-top:20px;justify-content:flex-end;}
+.hint{font-size:11px;color:var(--muted);margin-top:14px;line-height:1.5;}
+
+::-webkit-scrollbar{width:9px;}
+::-webkit-scrollbar-thumb{background:var(--line);border-radius:5px;}
+
+@media(max-width:800px){
+  .app{flex-direction:column;}
+  .sidebar{width:100%;border-right:none;border-bottom:1px solid var(--line);}
+}
+
+@media print{
+  body *{ visibility:hidden; }
+  #overlay-preventivo, #overlay-preventivo *{ visibility:visible; }
+  #overlay-preventivo{
+    position:fixed; inset:0; background:#fff !important; padding:0; margin:0;
+  }
+  #overlay-preventivo .modal{
+    max-width:100%; max-height:none; box-shadow:none; border:none;
+    background:#fff !important; color:#111 !important; padding:30px;
+  }
+  #overlay-preventivo .modal-actions{ display:none !important; }
+  #preventivo-print-area, #preventivo-print-area *{ color:#111 !important; border-color:#ccc !important; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
+        <circle cx="15" cy="15" r="13" stroke="#ff8a3d" stroke-width="2.5"/>
+        <circle cx="15" cy="15" r="4.5" fill="#ff8a3d"/>
+      </svg>
+      <div>SPOOLBASE
+        <small>gestione bobine · v1.1</small>
+      </div>
+    </div>
+    <div id="storage-indicator" style="font-size:11px;font-family:var(--font-mono);padding:8px 10px;background:var(--surface-2);border-radius:7px;border:1px solid var(--line);"></div>
+    <div id="backup-reminder" style="display:none;font-size:11.5px;padding:8px 10px;background:var(--amber-dim);color:var(--amber);border-radius:7px;border:1px solid var(--amber);"></div>
+
+    <nav class="page-nav">
+      <button class="page-nav-btn active" data-page="filamenti">📦 Filamenti</button>
+      <button class="page-nav-btn" data-page="stampanti">🖨 Stampanti</button>
+      <button class="page-nav-btn" data-page="ricambi">🔧 Ricambi manutenzione</button>
+      <button class="page-nav-btn" data-page="clienti">👤 Clienti</button>
+      <button class="page-nav-btn" data-page="ordini">📋 Ordini</button>
+      <button class="page-nav-btn" data-page="bilancio">💰 Bilancio</button>
+      <button class="page-nav-btn" data-page="impostazioni">⚙️ Impostazioni</button>
+    </nav>
+
+    <div id="sidebar-filamenti-extra">
+    <div class="stat-row">
+      <div class="stat-block">
+        <div class="n" id="stat-total">0</div>
+        <div class="l">Bobine tot.</div>
+      </div>
+      <div class="stat-block">
+        <div class="n" id="stat-kg">0</div>
+        <div class="l">Kg rimanenti</div>
+      </div>
+    </div>
+    <div class="stat-row">
+      <div class="stat-block">
+        <div class="n" id="stat-aperte">0</div>
+        <div class="l">Aperte</div>
+      </div>
+      <div class="stat-block">
+        <div class="n" id="stat-basse">0</div>
+        <div class="l">In esaurimento</div>
+      </div>
+    </div>
+    <div class="stat-row">
+      <div class="stat-block">
+        <div class="n" id="stat-valore" style="color:var(--teal)">€0</div>
+        <div class="l">Valore residuo</div>
+      </div>
+      <div class="stat-block">
+        <div class="n" id="stat-investito">€0</div>
+        <div class="l">Totale investito</div>
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <h4>Stato</h4>
+      <select id="f-stato">
+        <option value="">Tutti</option>
+        <option value="nuova">Nuova (chiusa)</option>
+        <option value="aperta">Aperta</option>
+        <option value="esaurita">Esaurita</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <h4>Materiale</h4>
+      <select id="f-materiale"><option value="">Tutti</option></select>
+    </div>
+    <div class="filter-group">
+      <h4>Marca</h4>
+      <select id="f-marca"><option value="">Tutte</option></select>
+    </div>
+    <div class="filter-group">
+      <h4>Ordina per</h4>
+      <select id="f-sort">
+        <option value="recente">Più recenti</option>
+        <option value="peso-asc">Peso rimanente ↑</option>
+        <option value="peso-desc">Peso rimanente ↓</option>
+        <option value="nome">Nome A-Z</option>
+        <option value="valore-desc">Valore residuo ↓</option>
+      </select>
+    </div>
+
+    <div class="material-list" id="material-breakdown"></div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div id="page-filamenti">
+    <div class="topbar">
+      <div>
+        <h1>Magazzino filamenti</h1>
+        <p>Traccia marche, materiali, colori e stato di ogni bobina.</p>
+      </div>
+      <div class="searchbar">
+        <input type="text" id="search" placeholder="Cerca marca, colore, codice, posizione...">
+        <div class="view-toggle">
+          <button id="view-grid" class="active" title="Vista griglia">▦</button>
+          <button id="view-table" title="Vista tabella">☰</button>
+        </div>
+        <button class="btn secondary" id="btn-group-toggle" title="Raggruppa bobine identiche (stesso materiale, marca, colore, posizione)">🔗 Raggruppa</button>
+        <button class="btn secondary" id="btn-stats">📊 Statistiche</button>
+        <button class="btn secondary" id="btn-consumi">📈 Consumi</button>
+        <button class="btn secondary" id="btn-calc">🧮 Costo stampa</button>
+        <button class="btn secondary" id="btn-export">Esporta backup</button>
+        <button class="btn secondary" id="btn-import">Importa backup</button>
+        <input type="file" id="file-import" accept="application/json" style="display:none">
+        <button class="btn" id="btn-add">+ Nuova bobina</button>
+      </div>
+    </div>
+
+    <div class="grid" id="grid"></div>
+    <div class="empty-state" id="empty" style="display:none">
+      <svg width="52" height="52" viewBox="0 0 52 52" fill="none"><circle cx="26" cy="26" r="22" stroke="#8d8c93" stroke-width="2.5"/><circle cx="26" cy="26" r="7" stroke="#8d8c93" stroke-width="2.5"/></svg>
+      <h3>Nessuna bobina qui</h3>
+      <p>Aggiungi la prima bobina o cambia i filtri.</p>
+    </div>
+    </div>
+
+    <div id="page-stampanti" style="display:none">
+      <div class="topbar">
+        <div>
+          <h1>Stampanti</h1>
+          <p>Gestisci la flotta: aggiungi, modifica o rimuovi stampanti e la loro potenza.</p>
+        </div>
+      </div>
+      <div id="fleet-page-rows" style="display:flex;flex-direction:column;gap:10px;max-width:640px;"></div>
+      <button class="btn" id="btn-fleet-page-add" type="button" style="margin-top:14px;">+ Aggiungi stampante</button>
+      <p class="hint" style="max-width:640px;">Le stampanti aggiunte qui compaiono automaticamente nel calcolatore "Costo stampa" — nessun'altra modifica necessaria quando amplii la flotta.</p>
+    </div>
+
+    <div id="page-ricambi" style="display:none">
+      <div class="topbar">
+        <div>
+          <h1>Ricambi e manutenzione</h1>
+          <p>Scorte di ugelli, cinghie, cuscinetti e altri ricambi per le tue stampanti.</p>
+        </div>
+        <div class="searchbar">
+          <input type="text" id="ricambi-search" placeholder="Cerca ricambio, categoria, stampante...">
+          <button class="btn" id="btn-ricambio-add">+ Nuovo ricambio</button>
+        </div>
+      </div>
+
+      <div class="stat-row" style="margin-bottom:16px;max-width:640px;">
+        <div class="stat-block" style="flex:1;">
+          <div class="n" id="ric-stat-totale">0</div>
+          <div class="l">Ricambi a magazzino</div>
+        </div>
+        <div class="stat-block" style="flex:1;">
+          <div class="n" id="ric-stat-pezzi">0</div>
+          <div class="l">Pezzi totali</div>
+        </div>
+        <div class="stat-block" style="flex:1;">
+          <div class="n" id="ric-stat-valore" style="color:var(--teal)">€0</div>
+          <div class="l">Valore scorta</div>
+        </div>
+        <div class="stat-block" style="flex:1;">
+          <div class="n" id="ric-stat-basse" style="color:var(--red)">0</div>
+          <div class="l">Sotto scorta minima</div>
+        </div>
+      </div>
+      <div id="ric-stat-categorie" style="max-width:640px;margin-bottom:20px;"></div>
+
+      <div class="grid" id="ricambi-grid"></div>
+      <div class="empty-state" id="ricambi-empty" style="display:none">
+        <h3>Nessun ricambio in magazzino</h3>
+        <p>Aggiungi ugelli, cinghie, cuscinetti o altri pezzi di ricambio.</p>
+      </div>
+    </div>
+
+    <div id="page-clienti" style="display:none">
+      <div class="topbar">
+        <div>
+          <h1>Clienti</h1>
+          <p>Anagrafica e storico ordini per ogni cliente.</p>
+        </div>
+        <div class="searchbar">
+          <input type="text" id="clienti-search" placeholder="Cerca nome, azienda, email...">
+          <button class="btn" id="btn-cliente-add">+ Nuovo cliente</button>
+        </div>
+      </div>
+      <div class="grid" id="clienti-grid"></div>
+      <div class="empty-state" id="clienti-empty" style="display:none">
+        <h3>Nessun cliente censito</h3>
+        <p>Aggiungi un cliente per iniziare a collegare preventivi e vendite.</p>
+      </div>
+    </div>
+
+    <div id="page-ordini" style="display:none">
+      <div class="topbar">
+        <div>
+          <h1>Ordini</h1>
+          <p>Pipeline di lavorazione: dal preventivo generato fino all'incasso.</p>
+        </div>
+        <div class="searchbar">
+          <input type="text" id="ordini-search" placeholder="Cerca cliente, descrizione...">
+          <select id="ordini-filtro-stato">
+            <option value="">Tutti gli stati</option>
+            <option value="__attivi">Attivi (non pagati/annullati)</option>
+            <option value="__sospeso">Crediti in sospeso</option>
+            <option value="__consegna">Da consegnare</option>
+            <option value="__ritardo">In ritardo sulla consegna prevista</option>
+            <option value="__fermi">Fermi da troppo tempo (&gt;7gg)</option>
+            <option value="preventivo">📝 Preventivo generato</option>
+            <option value="inviato">📤 Inviato al cliente</option>
+            <option value="accettato">👍 Accettato</option>
+            <option value="in_stampa">🖨 In stampa</option>
+            <option value="post_produzione">🧰 Post-produzione</option>
+            <option value="pronto">📦 Pronto</option>
+            <option value="consegnato">🚚 Consegnato</option>
+            <option value="pagato">💶 Pagato</option>
+            <option value="annullato">🚫 Annullato</option>
+          </select>
+          <button class="btn" id="btn-ordine-add">+ Nuovo ordine</button>
+        </div>
+      </div>
+
+      <div class="stat-row" style="margin-bottom:20px;max-width:1080px;">
+        <div class="stat-block" style="flex:1;">
+          <div class="n" id="ord-stat-attivi">0</div>
+          <div class="l">Ordini attivi</div>
+        </div>
+        <div class="stat-block" style="flex:1;">
+          <div class="n" style="color:var(--amber)" id="ord-stat-sospeso">€0</div>
+          <div class="l">Crediti in sospeso (accettati, non pagati)</div>
+        </div>
+        <div class="stat-block" style="flex:1;">
+          <div class="n" id="ord-stat-consegna">0</div>
+          <div class="l">Da consegnare (pronti / in lavorazione)</div>
+        </div>
+        <div class="stat-block" style="flex:1;">
+          <div class="n" style="color:var(--red)" id="ord-stat-fermi">0</div>
+          <div class="l">Fermi da troppo tempo (&gt;7gg)</div>
+        </div>
+      </div>
+
+      <div style="max-width:1080px;margin-bottom:24px;">
+        <h2 style="font-size:15px;margin:0 0 10px;">📅 Prossime consegne (7 giorni)</h2>
+        <div id="ordini-settimana" class="weeksum"></div>
+      </div>
+
+      <div class="grid" id="ordini-grid"></div>
+      <div class="empty-state" id="ordini-empty" style="display:none">
+        <h3>Nessun ordine ancora</h3>
+        <p>Genera un preventivo dalla pagina Filamenti (🧮 Costo stampa → 📄 Genera preventivo) e salvalo come ordine per iniziare a tracciarne lo stato.</p>
+      </div>
+    </div>
+
+    <div id="page-bilancio" style="display:none">
+      <div class="topbar">
+        <div>
+          <h1>Bilancio</h1>
+          <p>Spese sostenute per filamento, ricambi e attrezzatura, a confronto con gli incassi registrati.</p>
+        </div>
+      </div>
+
+      <div class="stat-row" style="margin-bottom:12px;max-width:820px;">
+        <div class="stat-block" style="flex:1;">
+          <div class="n" style="color:var(--teal)" id="bil-entrate">€0</div>
+          <div class="l">Entrate totali</div>
+        </div>
+        <div class="stat-block" style="flex:1;">
+          <div class="n" id="bil-spese-materiali">€0</div>
+          <div class="l">Spese materiali</div>
+        </div>
+        <div class="stat-block" style="flex:1;">
+          <div class="n" id="bil-utile-op" style="color:var(--amber)">€0</div>
+          <div class="l">Utile operativo</div>
+        </div>
+        <div class="stat-block" style="flex:1;">
+          <div class="n" style="color:var(--amber)" id="bil-crediti-sospeso">€0</div>
+          <div class="l">Crediti in sospeso (accettati, non incassati)</div>
+        </div>
+      </div>
+      <div class="stat-row" style="margin-bottom:20px;max-width:820px;">
+        <div class="stat-block" style="flex:1;">
+          <div class="n" id="bil-spesa-filamento">€0</div>
+          <div class="l">Spesa filamento</div>
+        </div>
+        <div class="stat-block" style="flex:1;">
+          <div class="n" id="bil-spesa-ricambi">€0</div>
+          <div class="l">Spesa ricambi</div>
+        </div>
+        <div class="stat-block" style="flex:1;">
+          <div class="n" id="bil-investimento">€0</div>
+          <div class="l">Investimento stampanti (una tantum)</div>
+        </div>
+        <div class="stat-block" style="flex:1;">
+          <div class="n" id="bil-utile-netto" style="color:var(--teal)">€0</div>
+          <div class="l">Utile netto (dopo investimento)</div>
+        </div>
+      </div>
+
+      <h4 style="margin:0 0 12px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);max-width:820px;">Margine per mese (entrate − spese materiali)</h4>
+      <div id="bil-bars-mese" style="max-width:820px;margin-bottom:24px;"></div>
+
+      <h4 style="margin:0 0 12px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);max-width:820px;">Ultime vendite registrate</h4>
+      <div id="bil-vendite-lista" style="max-width:820px;font-size:12.5px;font-family:var(--font-mono);"></div>
+    </div>
+
+    <div id="page-impostazioni" style="display:none">
+      <div class="topbar">
+        <div>
+          <h1>Impostazioni</h1>
+          <p>Parametri di costo/preventivo, aspetto e altre preferenze dell'app.</p>
+        </div>
+      </div>
+
+      <div style="max-width:640px;">
+        <h3 style="font-size:14px;margin:0 0 4px;">💶 Costi e preventivo</h3>
+        <p class="hint" style="margin:0 0 14px;">Usati dal calcolatore "🧮 Costo stampa" e per il calcolo automatico dell'IVA sugli ordini.</p>
+        <div class="form-row">
+          <div>
+            <label>Costo energia (€/kWh)</label>
+            <input type="number" id="cfg-kwh" min="0" step="0.01" value="0.40">
+          </div>
+          <div>
+            <label>Investimento totale (€)</label>
+            <input type="number" id="cfg-investimento" min="0" value="2000">
+          </div>
+        </div>
+        <div class="form-row">
+          <div>
+            <label>Ammortamento (anni)</label>
+            <input type="number" id="cfg-anni" min="0" step="0.5" value="2">
+          </div>
+          <div>
+            <label>Ore lavoro/giorno</label>
+            <input type="number" id="cfg-ore-giorno" min="0" value="16">
+          </div>
+        </div>
+        <div class="form-row">
+          <div>
+            <label>Manutenzione annua (% valore macchine)</label>
+            <input type="number" id="cfg-manutenzione" min="0" value="40">
+          </div>
+          <div>
+            <label>Scarto/margine su filamento (%)</label>
+            <input type="number" id="cfg-scarto" min="0" value="25">
+          </div>
+        </div>
+        <div class="form-row">
+          <div>
+            <label>Ricarico bobina per preventivo (%)</label>
+            <input type="number" id="cfg-ricarico" min="0" value="20">
+          </div>
+          <div>
+            <label>IVA (%)</label>
+            <input type="number" id="cfg-iva" min="0" value="22">
+          </div>
+        </div>
+
+        <h3 style="font-size:14px;margin:26px 0 4px;">🏷 Dati attività (intestazione preventivo)</h3>
+        <div class="form-row">
+          <div>
+            <label>Nome attività</label>
+            <input type="text" id="cfg-nome-attivita" placeholder="es. Domenico 3D Print">
+          </div>
+          <div>
+            <label>P.IVA / C.F.</label>
+            <input type="text" id="cfg-piva" placeholder="opzionale">
+          </div>
+        </div>
+        <div class="form-row">
+          <div>
+            <label>Email</label>
+            <input type="text" id="cfg-email" placeholder="es. nome@email.it">
+          </div>
+          <div>
+            <label>Telefono</label>
+            <input type="text" id="cfg-telefono" placeholder="opzionale">
+          </div>
+        </div>
+        <div>
+          <label>Indirizzo (opzionale)</label>
+          <input type="text" id="cfg-indirizzo" placeholder="via, città...">
+        </div>
+
+        <h3 style="font-size:14px;margin:26px 0 4px;">🎨 Aspetto</h3>
+        <div>
+          <label>Tema</label>
+          <div style="display:flex;gap:8px;">
+            <button class="btn secondary" id="btn-tema-scuro" style="flex:1;">🌙 Scuro</button>
+            <button class="btn secondary" id="btn-tema-chiaro" style="flex:1;">☀️ Chiaro</button>
+          </div>
+        </div>
+
+        <h3 style="font-size:14px;margin:26px 0 4px;">🌍 Lingua</h3>
+        <div>
+          <label>Lingua dell'interfaccia</label>
+          <select id="cfg-lingua">
+            <option value="it">Italiano</option>
+            <option value="en" disabled>English (in arrivo)</option>
+          </select>
+          <p class="hint" style="margin-top:6px;">L'app oggi è scritta interamente in italiano: aggiungere altre lingue richiede tradurre tutte le schermate, non solo questa impostazione. È fattibile ma è un lavoro a parte — fammi sapere se vuoi che lo pianifichiamo.</p>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="overlay" id="overlay" style="display:none">
+  <div class="modal">
+    <h2 id="modal-title">Nuova bobina</h2>
+    <input type="hidden" id="f-id">
+
+    <div class="form-row">
+      <div>
+        <label>Marca</label>
+        <input type="text" id="f-marca-in" list="marche-list" placeholder="es. Prusament, eSUN...">
+        <datalist id="marche-list"></datalist>
+      </div>
+      <div>
+        <label>Materiale</label>
+        <input type="text" id="f-materiale-in" list="materiali-list" placeholder="es. PLA, PETG, ABS...">
+        <datalist id="materiali-list">
+          <option value="PLA"><option value="PLA+"><option value="PETG">
+          <option value="ABS"><option value="ASA"><option value="TPU">
+          <option value="Nylon"><option value="PC"><option value="PVA">
+          <option value="HIPS"><option value="Silk">
+        </datalist>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div>
+        <label>Nome colore</label>
+        <input type="text" id="f-colore-nome" placeholder="es. Arancio Vulcano">
+      </div>
+      <div>
+        <label>Colore (swatch)</label>
+        <div class="color-swatch-row">
+          <input type="color" id="f-colore-hex" value="#ff8a3d">
+        </div>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div>
+        <label>Diametro</label>
+        <select id="f-diametro">
+          <option value="1.75">1.75 mm</option>
+          <option value="2.85">2.85 mm</option>
+        </select>
+      </div>
+      <div>
+        <label>Stato</label>
+        <select id="f-stato-in">
+          <option value="nuova">Nuova (chiusa)</option>
+          <option value="aperta">Aperta</option>
+          <option value="esaurita">Esaurita</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div>
+        <label>Peso totale bobina (g)</label>
+        <input type="number" id="f-peso-tot" value="1000" min="0">
+      </div>
+      <div>
+        <label>Peso rimanente (g)</label>
+        <input type="number" id="f-peso-rim" value="1000" min="0">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div>
+        <label>Prezzo di acquisto (€)</label>
+        <input type="number" id="f-prezzo" value="0" min="0" step="0.01" placeholder="es. 22.90">
+      </div>
+      <div>
+        <label>Costo al kg (calcolato)</label>
+        <input type="text" id="f-costo-kg" value="—" disabled style="opacity:.6">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div>
+        <label>Posizione (scaffale/box)</label>
+        <input type="text" id="f-posizione" placeholder="es. Scaffale B, cassetto 2">
+      </div>
+      <div>
+        <label>Data acquisto</label>
+        <input type="date" id="f-data">
+      </div>
+    </div>
+
+    <div>
+      <label>Note</label>
+      <input type="text" id="f-note" placeholder="es. leggermente umida, comprata su offerta...">
+    </div>
+
+    <p class="hint">Suggerimento: quando apri una bobina nuova, cambia lo stato in "Aperta" e aggiorna il peso rimanente dopo ogni stampa per tenere il conteggio preciso.</p>
+
+    <div class="modal-actions">
+      <button class="btn secondary" id="btn-cancel">Annulla</button>
+      <button class="btn danger" id="btn-delete" style="display:none">Elimina</button>
+      <button class="btn" id="btn-save">Salva bobina</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay-stats" style="display:none">
+  <div class="modal" style="max-width:640px">
+    <h2>Statistiche magazzino</h2>
+    <div id="stats-summary" style="display:flex;gap:10px;margin-bottom:22px;flex-wrap:wrap;"></div>
+    <h4 style="margin:0 0 12px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Valore residuo per materiale</h4>
+    <div id="stats-bars-materiale"></div>
+    <h4 style="margin:20px 0 12px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Valore residuo per marca</h4>
+    <div id="stats-bars-marca"></div>
+    <h4 style="margin:20px 0 12px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Costo medio al kg per materiale</h4>
+    <div id="stats-bars-costokg"></div>
+    <div class="modal-actions">
+      <button class="btn secondary" id="btn-stats-close">Chiudi</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay-cliente" style="display:none">
+  <div class="modal">
+    <h2 id="cliente-modal-title">Nuovo cliente</h2>
+    <input type="hidden" id="c-id">
+
+    <div class="form-row">
+      <div>
+        <label>Nome</label>
+        <input type="text" id="c-nome" placeholder="es. Mario Rossi">
+      </div>
+      <div>
+        <label>Azienda (opzionale)</label>
+        <input type="text" id="c-azienda" placeholder="es. Rossi Design Srl">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div>
+        <label>Email</label>
+        <input type="text" id="c-email" placeholder="es. mario@email.it">
+      </div>
+      <div>
+        <label>Telefono</label>
+        <input type="text" id="c-telefono" placeholder="opzionale">
+      </div>
+    </div>
+
+    <div>
+      <label>Indirizzo (opzionale)</label>
+      <input type="text" id="c-indirizzo" placeholder="via, città...">
+    </div>
+
+    <div>
+      <label>Note</label>
+      <input type="text" id="c-note" placeholder="es. preferisce PLA, sconto abituale 10%...">
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn secondary" id="btn-cliente-cancel">Annulla</button>
+      <button class="btn danger" id="btn-cliente-delete" style="display:none">Elimina</button>
+      <button class="btn" id="btn-cliente-save">Salva cliente</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay-ordine-edit" style="display:none">
+  <div class="modal">
+    <h2 id="oe-title">Modifica ordine</h2>
+    <input type="hidden" id="oe-id">
+
+    <div>
+      <label>Cliente</label>
+      <select id="oe-cliente"><option value="">Nessun cliente</option></select>
+    </div>
+
+    <div>
+      <label>Descrizione</label>
+      <input type="text" id="oe-descrizione" placeholder="es. Vaso decorativo, PLA rosso">
+    </div>
+
+    <div class="form-row">
+      <div>
+        <label>Imponibile (€)</label>
+        <input type="number" id="oe-imponibile" step="0.01" min="0">
+      </div>
+      <div>
+        <label>IVA (€) — calcolata automaticamente, modificabile</label>
+        <input type="number" id="oe-iva" step="0.01" min="0">
+      </div>
+    </div>
+
+    <div>
+      <label>Consegna prevista (opzionale)</label>
+      <input type="date" id="oe-consegna">
+    </div>
+
+    <div>
+      <label>Note</label>
+      <input type="text" id="oe-note" placeholder="opzionale">
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn secondary" id="btn-oe-cancel">Annulla</button>
+      <button class="btn" id="btn-oe-save">Salva modifiche</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay-ricambio" style="display:none">
+  <div class="modal">
+    <h2 id="ricambio-modal-title">Nuovo ricambio</h2>
+    <input type="hidden" id="r-id">
+
+    <div class="form-row">
+      <div>
+        <label>Nome ricambio</label>
+        <input type="text" id="r-nome" list="ricambi-nomi-list" placeholder="es. Ugello 0.4mm, Piatto in vetro, Tubo PTFE...">
+        <datalist id="ricambi-nomi-list"></datalist>
+      </div>
+      <div>
+        <label>Categoria</label>
+        <input type="text" id="r-categoria" list="ricambi-cat-list" placeholder="es. Ugelli">
+        <datalist id="ricambi-cat-list">
+          <option value="Ugelli"><option value="Piatti"><option value="Tubi PTFE">
+          <option value="Estrusori"><option value="Cinghie"><option value="Cuscinetti">
+          <option value="Ventole"><option value="Hotend"><option value="Elettronica">
+          <option value="Viti/Bulloneria"><option value="Altro">
+        </datalist>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div>
+        <label>Stampante compatibile</label>
+        <select id="r-stampante">
+          <option value="Tutte">Tutte le stampanti</option>
+        </select>
+      </div>
+      <div>
+        <label>Fornitore / link (opzionale)</label>
+        <input type="text" id="r-fornitore" placeholder="es. Amazon, negozio locale...">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div>
+        <label>Quantità in scorta</label>
+        <input type="number" id="r-quantita" min="0" value="5">
+      </div>
+      <div>
+        <label>Soglia minima (avviso scorta bassa)</label>
+        <input type="number" id="r-quantita-min" min="0" value="2">
+      </div>
+    </div>
+
+    <div>
+      <label>Prezzo unitario (€, opzionale)</label>
+      <input type="number" id="r-prezzo" min="0" step="0.01" value="0">
+    </div>
+
+    <div>
+      <label>Note</label>
+      <input type="text" id="r-note" placeholder="es. compatibile solo con hotend all-metal...">
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn secondary" id="btn-ricambio-cancel">Annulla</button>
+      <button class="btn danger" id="btn-ricambio-delete" style="display:none">Elimina</button>
+      <button class="btn" id="btn-ricambio-save">Salva ricambio</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay-use" style="display:none">
+  <div class="modal" style="max-width:380px">
+    <h2>Registra utilizzo</h2>
+    <div id="use-spool-name" style="font-size:13px;color:var(--muted);margin-bottom:14px;"></div>
+    <div>
+      <label>Grammi consumati</label>
+      <input type="number" id="use-grammi" min="1" value="50" style="font-size:18px;padding:12px;">
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px;">
+      <button type="button" class="btn secondary use-quick" data-g="20" style="flex:1;">20g</button>
+      <button type="button" class="btn secondary use-quick" data-g="50" style="flex:1;">50g</button>
+      <button type="button" class="btn secondary use-quick" data-g="100" style="flex:1;">100g</button>
+      <button type="button" class="btn secondary use-quick" data-g="200" style="flex:1;">200g</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn secondary" id="btn-use-close">Annulla</button>
+      <button class="btn" id="btn-use-confirm">Conferma</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay-consumi" style="display:none">
+  <div class="modal" style="max-width:640px">
+    <h2>Monitoraggio consumi</h2>
+    <div id="consumi-summary" style="display:flex;gap:10px;margin-bottom:22px;flex-wrap:wrap;"></div>
+
+    <h4 style="margin:0 0 12px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Consumo per giorno (ultimi 14 giorni)</h4>
+    <div id="consumi-bars-giorno"></div>
+
+    <h4 style="margin:20px 0 12px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Consumo per materiale (ultimi 30 giorni)</h4>
+    <div id="consumi-bars-materiale"></div>
+
+    <h4 style="margin:20px 0 12px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Consumo per marca (ultimi 30 giorni)</h4>
+    <div id="consumi-bars-marca"></div>
+
+    <h4 style="margin:20px 0 12px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Ultimi movimenti</h4>
+    <div id="consumi-lista" style="max-height:220px;overflow-y:auto;font-size:12.5px;font-family:var(--font-mono);"></div>
+
+    <div class="modal-actions">
+      <button class="btn secondary" id="btn-consumi-clear">Azzera storico</button>
+      <button class="btn secondary" id="btn-consumi-close">Chiudi</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay-calc" style="display:none">
+  <div class="modal" style="max-width:560px">
+    <h2>Calcola costo stampa</h2>
+
+    <div style="margin-bottom:14px;">
+      <label>Cliente (opzionale)</label>
+      <select id="calc-cliente">
+        <option value="">Nessuno / uso interno</option>
+      </select>
+    </div>
+
+    <label>Bobine utilizzate in questa stampa</label>
+    <div id="calc-rows" style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px;"></div>
+    <button class="btn secondary" id="btn-calc-add-row" type="button" style="width:100%;margin-bottom:14px;">+ Aggiungi bobina</button>
+
+    <label>Stampanti utilizzate in questa stampa</label>
+    <div id="printer-rows" style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px;"></div>
+    <button class="btn secondary" id="btn-calc-add-printer" type="button" style="width:100%;margin-bottom:14px;">+ Aggiungi stampante</button>
+
+    <div class="form-row">
+      <div>
+        <label>Materiali extra (€)</label>
+        <input type="number" id="calc-extra" min="0" step="0.1" value="0" placeholder="colla, ricambi...">
+      </div>
+      <div>
+        <label>Pre-produzione (€)</label>
+        <input type="number" id="calc-pre" min="0" step="0.1" value="0" placeholder="preparazione modello, setup...">
+      </div>
+    </div>
+    <div class="form-row">
+      <div>
+        <label>Post-produzione (€)</label>
+        <input type="number" id="calc-post" min="0" step="0.1" value="0" placeholder="rifinitura, verniciatura...">
+      </div>
+      <div></div>
+    </div>
+
+    <p class="hint">🖨 Le stampanti si gestiscono ora dalla pagina "Stampanti" nel menu a sinistra.</p>
+    <p class="hint">⚙ IVA, ricarico, ammortamento e dati attività si gestiscono ora dalla pagina "⚙️ Impostazioni" nel menu a sinistra.</p>
+
+    <div id="calc-result" style="margin-top:20px;padding:16px;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius);">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">Costo interno stimato</div>
+      <div id="calc-costo" style="font-family:var(--font-mono);font-size:26px;color:var(--amber);font-weight:700;margin-top:4px;">€0.00</div>
+      <div id="calc-dettaglio" style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.7;"></div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn secondary" id="btn-calc-close">Chiudi</button>
+      <button class="btn secondary" id="btn-open-preventivo">📄 Genera preventivo</button>
+      <button class="btn" id="btn-calc-apply">Scala il peso dalle bobine</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay-preventivo" style="display:none">
+  <div class="modal" style="max-width:520px">
+    <div id="preventivo-print-area">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;border-bottom:1px solid var(--line);padding-bottom:16px;">
+        <div>
+          <div id="prev-nome-attivita" style="font-family:var(--font-display);font-weight:800;font-size:19px;"></div>
+          <div id="prev-contatti" style="font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.6;"></div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-family:var(--font-display);font-weight:800;font-size:16px;letter-spacing:.02em;">PREVENTIVO</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px;" id="prev-data"></div>
+        </div>
+      </div>
+
+      <div id="prev-cliente-block" style="margin-bottom:16px;display:none;">
+        <div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">Cliente</div>
+        <div id="prev-cliente-nome" style="font-weight:700;"></div>
+        <div id="prev-cliente-contatti" style="font-size:11.5px;color:var(--muted);line-height:1.5;"></div>
+      </div>
+
+      <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:16px;">
+        <thead>
+          <tr style="border-bottom:1px solid var(--line);">
+            <th style="text-align:left;padding:6px 0;color:var(--muted);font-size:11px;text-transform:uppercase;">Voce</th>
+            <th style="text-align:right;padding:6px 0;color:var(--muted);font-size:11px;text-transform:uppercase;">Importo</th>
+          </tr>
+        </thead>
+        <tbody id="prev-righe"></tbody>
+      </table>
+
+      <div style="border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:6px;font-size:13.5px;">
+        <div style="display:flex;justify-content:space-between;"><span>Imponibile</span><b id="prev-imponibile">€0.00</b></div>
+        <div style="display:flex;justify-content:space-between;color:var(--muted);"><span id="prev-iva-label">IVA</span><b id="prev-iva">€0.00</b></div>
+        <div style="display:flex;justify-content:space-between;font-size:19px;font-family:var(--font-mono);color:var(--teal);font-weight:700;margin-top:6px;">
+          <span>TOTALE</span><span id="prev-totale">€0.00</span>
+        </div>
+      </div>
+
+      <div style="margin-top:20px;font-size:11px;color:var(--muted);border-top:1px dashed var(--line);padding-top:10px;">
+        Preventivo generato con SPOOLBASE — validità indicativa, i prezzi possono variare in base a disponibilità materiali e complessità reale del modello.
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn secondary" id="btn-preventivo-close">Chiudi</button>
+      <button class="btn secondary" id="btn-preventivo-print">🖨 Stampa preventivo</button>
+      <button class="btn" id="btn-preventivo-venduto">➕ Salva come ordine</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORE_KEY = 'spools';
+let spools = [];
+let editingId = null;
+let storageMode = 'cloud'; // 'cloud' | 'local'
+
+const $ = s => document.querySelector(s);
+const grid = $('#grid');
+
+function uid(){ return 's_' + Date.now() + '_' + Math.random().toString(36).slice(2,7); }
+
+async function storageGet(key){
+  if(window.storage){
+    try{ return await window.storage.get(key, false); }
+    catch(e){ return null; }
+  }
+  const raw = localStorage.getItem('spoolbase_' + key);
+  return raw ? { value: raw } : null;
+}
+
+async function storageSet(key, value){
+  if(window.storage){
+    try{ return await window.storage.set(key, value, false); }
+    catch(e){ console.error('Errore storage cloud', e); return null; }
+  }
+  localStorage.setItem('spoolbase_' + key, value);
+  return { value };
+}
+
+function detectStorageMode(){
+  storageMode = window.storage ? 'cloud' : 'local';
+  const el = $('#storage-indicator');
+  if(!el) return;
+  if(storageMode === 'cloud'){
+    el.textContent = '☁ Salvataggio: account Claude';
+    el.style.color = 'var(--teal)';
+  } else {
+    el.textContent = '💾 Salvataggio: solo questo browser (locale)';
+    el.style.color = 'var(--amber)';
+  }
+}
+
+/* ---------- PROMEMORIA BACKUP PERIODICO ---------- */
+// Con un solo file HTML senza backend, il backup JSON è l'unica vera rete di sicurezza:
+// se il browser perde i dati locali (cache svuotata, profilo cambiato, ecc.) senza un
+// backup recente si perde tutto. Questo promemoria non è invasivo: compare solo dopo
+// una settimana dall'ultimo export e può essere rimandato di un giorno alla volta.
+const LAST_BACKUP_KEY = 'last_backup_export';
+const BACKUP_DISMISS_KEY = 'backup_reminder_dismissed_until';
+const BACKUP_REMINDER_DAYS = 7;
+
+async function checkBackupReminder(){
+  const el = $('#backup-reminder');
+  if(!el) return;
+
+  // niente da proteggere ancora, non disturbare un utente alle prime armi
+  const haDatiSignificativi = spools.length > 0 || orders.length > 0 || clienti.length > 0;
+  if(!haDatiSignificativi){ el.style.display = 'none'; return; }
+
+  let ultimoBackup = null, rimandatoFino = null;
+  try{ const r = await storageGet(LAST_BACKUP_KEY); if(r && r.value) ultimoBackup = r.value; }catch(e){}
+  try{ const r = await storageGet(BACKUP_DISMISS_KEY); if(r && r.value) rimandatoFino = r.value; }catch(e){}
+
+  if(rimandatoFino && new Date(rimandatoFino) > new Date()){ el.style.display = 'none'; return; }
+
+  const giorniTrascorsi = ultimoBackup ? giorniDa(ultimoBackup) : Infinity;
+  if(giorniTrascorsi < BACKUP_REMINDER_DAYS){ el.style.display = 'none'; return; }
+
+  const messaggio = ultimoBackup
+    ? `⚠ Ultimo backup ${giorniTrascorsi} giorni fa`
+    : `⚠ Nessun backup ancora esportato`;
+  el.innerHTML = `${messaggio}<br><button id="btn-backup-reminder-export" style="margin-top:5px;width:100%;">Esporta ora</button><button id="btn-backup-reminder-dismiss" style="margin-top:4px;width:100%;background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:11px;">Ricordamelo domani</button>`;
+  el.style.display = 'block';
+
+  $('#btn-backup-reminder-export').onclick = ()=>{ $('#btn-export').click(); };
+  $('#btn-backup-reminder-dismiss').onclick = async ()=>{
+    const domani = new Date(Date.now() + 86400000).toISOString();
+    await storageSet(BACKUP_DISMISS_KEY, domani);
+    el.style.display = 'none';
+  };
+}
+
+async function loadSpools(){
+  detectStorageMode();
+  try{
+    const res = await storageGet(STORE_KEY);
+    spools = res && res.value ? JSON.parse(res.value) : [];
+  }catch(e){
+    spools = [];
+  }
+  // Corregge eventuali incoerenze già salvate (es. peso 0 ma stato non "esaurita")
+  let fixed = false;
+  spools.forEach(s=>{
+    const correct = normalizeStato(s.stato, Number(s.pesoRim)||0, Number(s.pesoTot)||0);
+    if(correct !== s.stato){ s.stato = correct; fixed = true; }
+  });
+  if(fixed) saveSpools();
+  render();
+}
+
+async function saveSpools(){
+  try{
+    await storageSet(STORE_KEY, JSON.stringify(spools));
+  }catch(e){
+    console.error('Errore salvataggio', e);
+  }
+}
+
+/* ---------- LOG CONSUMI ---------- */
+const LOG_KEY = 'consumption_log';
+let consumptionLog = [];
+
+async function loadConsumptionLog(){
+  try{
+    const res = await storageGet(LOG_KEY);
+    consumptionLog = res && res.value ? JSON.parse(res.value) : [];
+  }catch(e){
+    consumptionLog = [];
+  }
+}
+async function saveConsumptionLog(){
+  try{
+    await storageSet(LOG_KEY, JSON.stringify(consumptionLog));
+  }catch(e){
+    console.error('Errore salvataggio log consumi', e);
+  }
+}
+async function logConsumption(spool, grammi, source, orderId){
+  if(!spool || grammi<=0) return;
+  const costo = (costPerKg(spool)/1000) * grammi;
+  consumptionLog.push({
+    id: uid(),
+    date: new Date().toISOString(),
+    spoolId: spool.id,
+    materiale: spool.materiale,
+    marca: spool.marca||'—',
+    coloreNome: spool.coloreNome,
+    grammi,
+    costo,
+    source,
+    orderId: orderId || null
+  });
+  await saveConsumptionLog();
+}
+
+function gaugeSvg(pct, hex){
+  const r = 22, c = 2*Math.PI*r;
+  const off = c - (c*pct/100);
+  return `<svg width="52" height="52" viewBox="0 0 52 52">
+    <circle cx="26" cy="26" r="${r}" fill="none" stroke="#38383f" stroke-width="5"/>
+    <circle cx="26" cy="26" r="${r}" fill="none" stroke="${hex}" stroke-width="5"
+      stroke-dasharray="${c}" stroke-dashoffset="${off}" stroke-linecap="round"
+      transform="rotate(-90 26 26)"/>
+    <text x="26" y="30" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="12" fill="#ece9e2">${pct}%</text>
+  </svg>`;
+}
+
+function residualValue(s){
+  const prezzo = Number(s.prezzo) || 0;
+  const tot = Number(s.pesoTot) || 0;
+  if(!tot) return 0;
+  return prezzo * (Number(s.pesoRim)||0) / tot;
+}
+function costPerKg(s){
+  const prezzo = Number(s.prezzo) || 0;
+  const tot = Number(s.pesoTot) || 0;
+  if(!tot) return 0;
+  return (prezzo / tot) * 1000;
+}
+
+function normalizeStato(stato, pesoRim, pesoTot){
+  if(pesoRim <= 0) return 'esaurita';
+  if(stato === 'esaurita' && pesoRim > 0) return 'aperta'; // incoerenza: non può essere esaurita con peso residuo
+  return stato;
+}
+
+function stateLabel(s){
+  return {nuova:'Nuova', aperta:'Aperta', esaurita:'Esaurita'}[s] || s;
+}
+
+function populateSelectOptions(){
+  const materiali = [...new Set(spools.map(s=>s.materiale))].sort();
+  const marche = [...new Set(spools.map(s=>s.marca).filter(Boolean))].sort();
+  const fMat = $('#f-materiale'), fMar = $('#f-marca');
+  const curMat = fMat.value, curMar = fMar.value;
+  fMat.innerHTML = '<option value="">Tutti</option>' + materiali.map(m=>`<option value="${m}">${m}</option>`).join('');
+  fMar.innerHTML = '<option value="">Tutte</option>' + marche.map(m=>`<option value="${m}">${m}</option>`).join('');
+  fMat.value = curMat; fMar.value = curMar;
+
+  const dl = $('#materiali-list');
+  const staticOpts = ['PLA','PLA+','PETG','ABS','ASA','TPU','Nylon','PC','PVA','HIPS','Silk'];
+  const merged = [...new Set([...staticOpts, ...materiali])];
+  dl.innerHTML = merged.map(m=>`<option value="${m}">`).join('');
+
+  const marcheList = $('#marche-list');
+  if(marcheList) marcheList.innerHTML = marche.map(m=>`<option value="${m}">`).join('');
+}
+
+function updateStats(){
+  const total = spools.length;
+  const kg = spools.reduce((a,s)=>a+(Number(s.pesoRim)||0),0)/1000;
+  const aperte = spools.filter(s=>s.stato==='aperta').length;
+  const basse = spools.filter(s=>s.stato!=='esaurita' && Number(s.pesoRim) < 150).length;
+  $('#stat-total').textContent = total;
+  $('#stat-kg').textContent = kg.toFixed(1);
+  $('#stat-aperte').textContent = aperte;
+  $('#stat-basse').textContent = basse;
+
+  const valoreResiduo = spools.reduce((a,s)=>a+residualValue(s),0);
+  const investito = spools.reduce((a,s)=>a+(Number(s.prezzo)||0),0);
+  $('#stat-valore').textContent = '€' + valoreResiduo.toFixed(0);
+  $('#stat-investito').textContent = '€' + investito.toFixed(0);
+
+  const byMat = {};
+  spools.forEach(s=>{ byMat[s.materiale] = (byMat[s.materiale]||0)+1; });
+  const list = Object.entries(byMat).sort((a,b)=>b[1]-a[1]);
+  $('#material-breakdown').innerHTML = list.map(([m,n])=>
+    `<div class="mat-chip"><span>${m}</span><span>${n}</span></div>`).join('') ||
+    '<div class="mat-chip"><span>Nessun dato</span></div>';
+}
+
+function applyFiltersAndSort(list){
+  const q = $('#search').value.trim().toLowerCase();
+  const fStato = $('#f-stato').value;
+  const fMat = $('#f-materiale').value;
+  const fMar = $('#f-marca').value;
+  let out = list.filter(s=>{
+    if(fStato && s.stato!==fStato) return false;
+    if(fMat && s.materiale!==fMat) return false;
+    if(fMar && s.marca!==fMar) return false;
+    if(q){
+      const blob = `${s.marca} ${s.materiale} ${s.coloreNome} ${s.posizione||''}`.toLowerCase();
+      if(!blob.includes(q)) return false;
+    }
+    return true;
+  });
+  const sort = $('#f-sort').value;
+  if(sort==='peso-asc') out.sort((a,b)=>a.pesoRim-b.pesoRim);
+  else if(sort==='peso-desc') out.sort((a,b)=>b.pesoRim-a.pesoRim);
+  else if(sort==='nome') out.sort((a,b)=>(a.marca+a.coloreNome).localeCompare(b.marca+b.coloreNome));
+  else if(sort==='valore-desc') out.sort((a,b)=>residualValue(b)-residualValue(a));
+  else out.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  return out;
+}
+
+let viewMode = 'grid';
+let groupMode = false;
+let expandedGroups = new Set();
+
+function render(){
+  populateSelectOptions();
+  updateStats();
+  const list = applyFiltersAndSort(spools);
+  $('#empty').style.display = list.length ? 'none' : 'block';
+  if(viewMode === 'grid'){
+    renderGrid(list);
+  } else {
+    renderTable(list);
+  }
+  if(typeof checkBackupReminder === 'function') checkBackupReminder();
+}
+
+function groupKey(s){
+  return [s.materiale, s.marca||'', s.coloreNome||'', s.diametro||'', s.posizione||''].join('§').toLowerCase();
+}
+
+function groupSpools(list){
+  const map = new Map();
+  list.forEach(s=>{
+    const k = groupKey(s);
+    if(!map.has(k)) map.set(k, []);
+    map.get(k).push(s);
+  });
+  return [...map.values()];
+}
+
+function spoolCardHtml(s){
+  const pct = s.pesoTot ? Math.round((s.pesoRim/s.pesoTot)*100) : 0;
+  const low = s.stato!=='esaurita' && s.pesoRim < 150;
+  const exhausted = s.stato === 'esaurita';
+  return `
+    <div class="card ${low ? 'low' : (exhausted ? 'exhausted' : '')}">
+      ${low ? '<div class="low-flag" title="Peso basso"></div>' : (exhausted ? '<div class="exhausted-flag" title="Bobina esaurita">📭</div>' : '')}
+      <div class="card-top">
+        <div class="spool-gauge">${gaugeSvg(pct, s.coloreHex || '#ff8a3d')}</div>
+        <div class="card-title">
+          <div class="mat">${s.materiale} · ${s.diametro || '1.75'} mm</div>
+          <h3>${s.coloreNome || 'Senza nome'}</h3>
+          <div class="brand-line">${s.marca || 'Marca sconosciuta'}</div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span class="badge ${s.stato}">${stateLabel(s.stato)}</span>
+        ${s.posizione ? `<span style="font-size:11.5px;color:var(--muted);font-family:var(--font-mono)">${s.posizione}</span>` : ''}
+      </div>
+      <div class="card-meta">
+        <span>Rimanente: <b>${s.pesoRim} g</b></span>
+        <span>Totale: <b>${s.pesoTot} g</b></span>
+      </div>
+      ${(Number(s.prezzo)>0) ? `<div class="card-meta">
+        <span>Valore residuo: <b>€${residualValue(s).toFixed(2)}</b></span>
+        <span>€/kg: <b>${costPerKg(s).toFixed(2)}</b></span>
+      </div>` : ''}
+      <div class="card-actions">
+        <button data-act="edit" data-id="${s.id}">Modifica</button>
+        <button data-act="copy" data-id="${s.id}">Copia</button>
+        <button data-act="use" data-id="${s.id}">− Usa</button>
+        <button data-act="delete" data-id="${s.id}" style="color:var(--red)">Elimina</button>
+      </div>
+    </div>
+  `;
+}
+
+function groupCardHtml(items, key){
+  const first = items[0];
+  const totRim = items.reduce((a,s)=>a+(Number(s.pesoRim)||0),0);
+  const totTot = items.reduce((a,s)=>a+(Number(s.pesoTot)||0),0);
+  const totVal = items.reduce((a,s)=>a+residualValue(s),0);
+  const counts = {};
+  items.forEach(s=>{ counts[s.stato] = (counts[s.stato]||0)+1; });
+  const expanded = expandedGroups.has(key);
+
+  const stateBadges = Object.entries(counts).map(([st,n])=>
+    `<span class="badge ${st}" style="font-size:10px;">${n} ${stateLabel(st).toLowerCase()}</span>`
+  ).join('');
+
+  return `
+    <div class="group-card">
+      <div class="group-header" data-group="${key}">
+        <div class="sw-big" style="background:${first.coloreHex||'#888'}"></div>
+        <div class="ginfo">
+          <h3>${first.coloreNome || 'Senza nome'} <span style="color:var(--muted);font-weight:400;">· ${first.materiale}</span></h3>
+          <div class="sub">${first.marca||'—'} ${first.posizione ? '· 📍 '+first.posizione : ''} · ${totRim}g / ${totTot}g rimanenti${totVal>0?' · €'+totVal.toFixed(2)+' residuo':''}</div>
+        </div>
+        <div class="gstates">${stateBadges}</div>
+        <div class="gcount">×${items.length}</div>
+        <div class="garrow">${expanded ? '▾' : '▸'}</div>
+      </div>
+      ${expanded ? `<div class="group-body">${items.map(spoolCardHtml).join('')}</div>` : ''}
+    </div>
+  `;
+}
+
+function renderGrid(list){
+  grid.innerHTML = '';
+  grid.style.display = 'grid';
+  if($('#tbl-wrap')) $('#tbl-wrap').remove();
+
+  if(groupMode){
+    const rendered = new Set();
+    const html = [];
+    list.forEach(s=>{
+      if(rendered.has(s.id)) return;
+      if(s.stato === 'nuova'){
+        const key = groupKey(s);
+        const groupItems = list.filter(o=>o.stato==='nuova' && groupKey(o)===key);
+        groupItems.forEach(o=>rendered.add(o.id));
+        html.push(groupItems.length > 1 ? groupCardHtml(groupItems, key) : spoolCardHtml(s));
+      } else {
+        rendered.add(s.id);
+        html.push(spoolCardHtml(s));
+      }
+    });
+    grid.innerHTML = html.join('');
+    grid.querySelectorAll('.group-header').forEach(el=>{
+      el.addEventListener('click', ()=>{
+        const key = el.dataset.group;
+        if(expandedGroups.has(key)) expandedGroups.delete(key);
+        else expandedGroups.add(key);
+        render();
+      });
+    });
+  } else {
+    grid.innerHTML = list.map(spoolCardHtml).join('');
+  }
+}
+
+function renderTable(list){
+  grid.innerHTML = '';
+  grid.style.display = 'none';
+  let wrap = document.getElementById('tbl-wrap');
+  if(!wrap){
+    wrap = document.createElement('div');
+    wrap.id = 'tbl-wrap';
+    wrap.className = 'tbl-wrap';
+    grid.parentNode.insertBefore(wrap, grid.nextSibling);
+  }
+  const rows = list.map(s=>{
+    const pct = s.pesoTot ? Math.round((s.pesoRim/s.pesoTot)*100) : 0;
+    const low = s.stato!=='esaurita' && s.pesoRim < 150;
+    const exhausted = s.stato === 'esaurita';
+    const rowStyle = low ? 'background:var(--red-dim);' : (exhausted ? 'background:var(--surface-2);opacity:.75;' : '');
+    return `<tr ${rowStyle ? `style="${rowStyle}"` : ''}>
+      <td><span class="sw" style="background:${s.coloreHex||'#888'}"></span>${s.coloreNome||'—'}</td>
+      <td>${s.materiale}</td>
+      <td>${s.marca||'—'}</td>
+      <td><span class="badge ${s.stato}">${stateLabel(s.stato)}</span></td>
+      <td ${low ? 'style="color:var(--red);font-weight:700;"' : ''}>${s.pesoRim} / ${s.pesoTot} g (${pct}%)</td>
+      <td>${Number(s.prezzo)>0 ? '€'+residualValue(s).toFixed(2) : '—'}</td>
+      <td>${s.posizione||'—'}</td>
+      <td class="tbl-actions">
+        <button data-act="edit" data-id="${s.id}">Modifica</button>
+        <button data-act="copy" data-id="${s.id}">Copia</button>
+        <button data-act="use" data-id="${s.id}">− Usa</button>
+        <button data-act="delete" data-id="${s.id}" style="color:var(--red)">Elimina</button>
+      </td>
+    </tr>`;
+  }).join('');
+  wrap.innerHTML = `<table class="spool-table">
+    <thead><tr>
+      <th>Colore</th><th>Materiale</th><th>Marca</th><th>Stato</th><th>Peso</th><th>Valore</th><th>Posizione</th><th>Azioni</th>
+    </tr></thead>
+    <tbody>${rows || `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px;">Nessuna bobina</td></tr>`}</tbody>
+  </table>`;
+  wrap.addEventListener('click', tableActionHandler);
+}
+
+function tableActionHandler(e){
+  const btn = e.target.closest('button[data-act]');
+  if(!btn) return;
+  handleSpoolAction(btn.dataset.act, btn.dataset.id);
+}
+
+grid.addEventListener('click', e=>{
+  const btn = e.target.closest('button[data-act]');
+  if(!btn) return;
+  handleSpoolAction(btn.dataset.act, btn.dataset.id);
+});
+
+function handleSpoolAction(act, id){
+  const spool = spools.find(s=>s.id===id);
+  if(!spool) return;
+  if(act === 'edit'){
+    openModal(spool);
+  } else if(act === 'copy'){
+    openModal(spool, true);
+  } else if(act === 'delete'){
+    const ordiniCollegati = orders.filter(o=>!o.materialeScalato && o.status!=='annullato' && (o.materiali||[]).some(m=>m.spoolId===id));
+    let msg = `Eliminare "${spool.coloreNome}" (${spool.marca}) dal magazzino?`;
+    if(ordiniCollegati.length){
+      const elenco = ordiniCollegati.map(o=>`- ${o.descrizione}${o.clienteNome ? ' ('+o.clienteNome+')' : ''}`).join('\n');
+      msg = `Attenzione: questa bobina è materiale pianificato (non ancora scalato) per ${ordiniCollegati.length} ordine/i:\n${elenco}\n\nSe la elimini, quel materiale non potrà più essere scalato automaticamente da qui. Eliminare comunque?`;
+    }
+    if(confirm(msg)){
+      spools = spools.filter(s=>s.id!==id);
+      saveSpools(); render();
+    }
+  } else if(act === 'use'){
+    openUseModal(spool);
+  }
+}
+
+/* ---------- MODALE UTILIZZO PERSONALIZZATO ---------- */
+let useSpoolId = null;
+function openUseModal(spool){
+  useSpoolId = spool.id;
+  $('#use-spool-name').textContent = `${spool.coloreNome} · ${spool.materiale} · ${spool.marca||'—'} (${spool.pesoRim}g rimasti)`;
+  $('#use-grammi').value = Math.min(50, spool.pesoRim) || 1;
+  $('#overlay-use').style.display = 'flex';
+  setTimeout(()=>$('#use-grammi').select(), 50);
+}
+$('#btn-use-close').addEventListener('click', ()=>$('#overlay-use').style.display='none');
+$('#overlay-use').addEventListener('click', e=>{ if(e.target.id==='overlay-use') $('#overlay-use').style.display='none'; });
+$('#overlay-use').querySelectorAll('.use-quick').forEach(btn=>{
+  btn.addEventListener('click', ()=>{ $('#use-grammi').value = btn.dataset.g; });
+});
+$('#use-grammi').addEventListener('keydown', e=>{ if(e.key==='Enter') $('#btn-use-confirm').click(); });
+$('#btn-use-confirm').addEventListener('click', async ()=>{
+  const spool = spools.find(s=>s.id===useSpoolId);
+  const grammi = Number($('#use-grammi').value) || 0;
+  if(!spool || grammi<=0) return;
+  const usedG = Math.min(grammi, spool.pesoRim);
+  spool.pesoRim = Math.max(0, spool.pesoRim - grammi);
+  if(spool.stato === 'nuova') spool.stato = 'aperta';
+  spool.stato = normalizeStato(spool.stato, spool.pesoRim, spool.pesoTot);
+  await logConsumption(spool, usedG, 'manuale');
+  await saveSpools();
+  $('#overlay-use').style.display = 'none';
+  render();
+});
+
+function openModal(spool, duplicate=false){
+  editingId = (spool && !duplicate) ? spool.id : null;
+  $('#modal-title').textContent = duplicate ? 'Duplica bobina' : (spool ? 'Modifica bobina' : 'Nuova bobina');
+  $('#btn-delete').style.display = (spool && !duplicate) ? 'inline-block' : 'none';
+  $('#f-id').value = editingId || '';
+  $('#f-marca-in').value = spool ? spool.marca : '';
+  $('#f-materiale-in').value = spool ? spool.materiale : 'PLA';
+  $('#f-colore-nome').value = spool ? spool.coloreNome : '';
+  $('#f-colore-hex').value = spool ? (spool.coloreHex || '#ff8a3d') : '#ff8a3d';
+  $('#f-diametro').value = spool ? (spool.diametro || '1.75') : '1.75';
+  $('#f-stato-in').value = duplicate ? 'nuova' : (spool ? spool.stato : 'nuova');
+  $('#f-peso-tot').value = spool ? spool.pesoTot : 1000;
+  $('#f-peso-rim').value = duplicate ? (spool ? spool.pesoTot : 1000) : (spool ? spool.pesoRim : 1000);
+  $('#f-prezzo').value = spool ? (spool.prezzo||0) : 0;
+  $('#f-posizione').value = spool ? (spool.posizione||'') : '';
+  $('#f-data').value = duplicate ? '' : (spool ? (spool.data||'') : '');
+  $('#f-note').value = spool ? (spool.note||'') : '';
+  updateCostoKgField();
+  $('#overlay').style.display = 'flex';
+}
+
+function updateCostoKgField(){
+  const prezzo = Number($('#f-prezzo').value) || 0;
+  const tot = Number($('#f-peso-tot').value) || 0;
+  $('#f-costo-kg').value = tot ? '€' + ((prezzo/tot)*1000).toFixed(2) + ' /kg' : '—';
+}
+$('#f-prezzo').addEventListener('input', updateCostoKgField);
+$('#f-peso-tot').addEventListener('input', updateCostoKgField);
+
+function closeModal(){ $('#overlay').style.display = 'none'; editingId = null; }
+
+$('#btn-add').addEventListener('click', ()=>openModal(null));
+$('#btn-cancel').addEventListener('click', closeModal);
+$('#overlay').addEventListener('click', e=>{ if(e.target.id==='overlay') closeModal(); });
+
+$('#btn-save').addEventListener('click', async ()=>{
+  const marca = $('#f-marca-in').value.trim();
+  const materiale = $('#f-materiale-in').value;
+  const coloreNome = $('#f-colore-nome').value.trim();
+  const coloreHex = $('#f-colore-hex').value;
+  const diametro = $('#f-diametro').value;
+  const pesoTot = Number($('#f-peso-tot').value) || 0;
+  const pesoRim = Number($('#f-peso-rim').value) || 0;
+  let stato = $('#f-stato-in').value;
+  const prezzo = Number($('#f-prezzo').value) || 0;
+  const posizione = $('#f-posizione').value.trim();
+  const data = $('#f-data').value;
+  const note = $('#f-note').value.trim();
+
+  if(!coloreNome){ alert('Inserisci un nome per il colore.'); return; }
+
+  // Normalizza lo stato in base al peso, anche se modificato a mano dal modulo
+  stato = normalizeStato(stato, pesoRim, pesoTot);
+
+  if(editingId){
+    const s = spools.find(x=>x.id===editingId);
+    Object.assign(s, {marca, materiale, coloreNome, coloreHex, diametro, stato, pesoTot, pesoRim, prezzo, posizione, data, note});
+  } else {
+    spools.push({
+      id: uid(), marca, materiale, coloreNome, coloreHex, diametro, stato,
+      pesoTot, pesoRim, prezzo, posizione, data, note, createdAt: Date.now()
+    });
+  }
+  await saveSpools();
+  closeModal();
+  render();
+});
+
+$('#btn-delete').addEventListener('click', async ()=>{
+  if(!editingId) return;
+  if(!confirm('Eliminare questa bobina dal magazzino?')) return;
+  spools = spools.filter(s=>s.id!==editingId);
+  await saveSpools();
+  closeModal();
+  render();
+});
+
+['#search','#f-stato','#f-materiale','#f-marca','#f-sort'].forEach(sel=>{
+  $(sel).addEventListener('input', render);
+  $(sel).addEventListener('change', render);
+});
+
+/* ---------- NAVIGAZIONE PAGINE ---------- */
+function switchPage(page){
+  $('#page-filamenti').style.display = page==='filamenti' ? '' : 'none';
+  $('#page-stampanti').style.display = page==='stampanti' ? '' : 'none';
+  $('#page-ricambi').style.display = page==='ricambi' ? '' : 'none';
+  $('#page-clienti').style.display = page==='clienti' ? '' : 'none';
+  $('#page-ordini').style.display = page==='ordini' ? '' : 'none';
+  $('#page-bilancio').style.display = page==='bilancio' ? '' : 'none';
+  $('#page-impostazioni').style.display = page==='impostazioni' ? '' : 'none';
+  $('#sidebar-filamenti-extra').style.display = page==='filamenti' ? '' : 'none';
+  document.querySelectorAll('.page-nav-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.page===page);
+  });
+  if(page==='stampanti') renderFleetRows();
+  if(page==='ricambi') renderRicambi();
+  if(page==='clienti') renderClienti();
+  if(page==='ordini') renderOrdini();
+  if(page==='bilancio') renderBilancio();
+  if(page==='impostazioni' && typeof aggiornaBottoniTema==='function') aggiornaBottoniTema();
+}
+document.querySelectorAll('.page-nav-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>switchPage(btn.dataset.page));
+});
+
+/* ---------- PAGINA BILANCIO ---------- */
+function renderBilancio(){
+  const ordiniPagati = orders.filter(o=>o.status==='pagato');
+  const entrateTotali = ordiniPagati.reduce((a,o)=>a+(Number(o.totale)||0),0);
+  const creditiSospeso = orders.filter(o=>ORDER_STATUS_SOSPESO.includes(o.status)).reduce((a,o)=>a+(Number(o.totale)||0),0);
+  $('#bil-crediti-sospeso').textContent = '€' + creditiSospeso.toFixed(2);
+  const spesaFilamento = consumptionLog.reduce((a,l)=>a+(Number(l.costo)||0),0);
+  const spesaRicambi = ricambiPurchaseLog.reduce((a,l)=>a+(Number(l.costo)||0),0);
+  const investimento = Number($('#cfg-investimento').value) || 0;
+  const speseMateriali = spesaFilamento + spesaRicambi;
+  const utileOperativo = entrateTotali - speseMateriali;
+  const utileNetto = utileOperativo - investimento;
+
+  $('#bil-entrate').textContent = '€' + entrateTotali.toFixed(2);
+  $('#bil-spese-materiali').textContent = '€' + speseMateriali.toFixed(2);
+  $('#bil-utile-op').textContent = '€' + utileOperativo.toFixed(2);
+  $('#bil-spesa-filamento').textContent = '€' + spesaFilamento.toFixed(2);
+  $('#bil-spesa-ricambi').textContent = '€' + spesaRicambi.toFixed(2);
+  $('#bil-investimento').textContent = '€' + investimento.toFixed(2);
+  $('#bil-utile-netto').textContent = '€' + utileNetto.toFixed(2);
+  $('#bil-utile-netto').style.color = utileNetto>=0 ? 'var(--teal)' : 'var(--red)';
+  $('#bil-utile-op').style.color = utileOperativo>=0 ? 'var(--amber)' : 'var(--red)';
+
+  // margine per mese, ultimi 6 mesi
+  const mesi = [];
+  const now = new Date();
+  for(let i=5;i>=0;i--){
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    const label = d.toLocaleDateString('it-IT',{month:'short',year:'2-digit'});
+    const entrateMese = ordiniPagati.filter(o=>(o.statusDates && o.statusDates.pagato || o.createdAt).slice(0,7)===key).reduce((a,o)=>a+(Number(o.totale)||0),0);
+    const speseMese = consumptionLog.filter(l=>l.date.slice(0,7)===key).reduce((a,l)=>a+(Number(l.costo)||0),0)
+                     + ricambiPurchaseLog.filter(l=>l.date.slice(0,7)===key).reduce((a,l)=>a+(Number(l.costo)||0),0);
+    mesi.push({label, value: entrateMese - speseMese});
+  }
+  // barChart usa solo valori positivi per la larghezza; qui mostriamo il margine assoluto con colore per segno
+  const maxAbs = Math.max(...mesi.map(m=>Math.abs(m.value)), 0.0001);
+  $('#bil-bars-mese').innerHTML = mesi.map(m=>`
+    <div class="bar-row">
+      <div class="bar-label">${m.label}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(Math.abs(m.value)/maxAbs*100).toFixed(1)}%;background:${m.value>=0?'var(--teal)':'var(--red)'}"></div></div>
+      <div class="bar-value" style="color:${m.value>=0?'var(--teal)':'var(--red)'}">€${m.value.toFixed(0)}</div>
+    </div>
+  `).join('');
+
+  const recentSales = [...ordiniPagati].sort((a,b)=>new Date(b.statusDates?.pagato||b.createdAt)-new Date(a.statusDates?.pagato||a.createdAt)).slice(0,20);
+  $('#bil-vendite-lista').innerHTML = recentSales.map(o=>{
+    const d = new Date(o.statusDates?.pagato || o.createdAt);
+    const dateStr = d.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'2-digit'});
+    return `<div style="padding:6px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:8px;">
+      <span>${dateStr} — ${o.descrizione}${o.clienteNome?' ('+o.clienteNome+')':''}</span>
+      <b style="color:var(--teal);flex-shrink:0;">+€${Number(o.totale).toFixed(2)}</b>
+    </div>`;
+  }).join('') || '<div style="color:var(--muted);">Nessun incasso registrato ancora. Crea un ordine dal preventivo e portalo a stato "Pagato" nella pagina Ordini.</div>';
+}
+
+/* ---------- CLIENTI ---------- */
+const CLIENTI_KEY = 'clienti';
+let clienti = [];
+let editingClienteId = null;
+
+async function loadClienti(){
+  try{
+    const res = await storageGet(CLIENTI_KEY);
+    clienti = res && res.value ? JSON.parse(res.value) : [];
+  }catch(e){
+    clienti = [];
+  }
+}
+async function saveClienti(){
+  await storageSet(CLIENTI_KEY, JSON.stringify(clienti));
+}
+
+function renderClienti(){
+  const q = ($('#clienti-search').value||'').trim().toLowerCase();
+  const list = clienti.filter(c=>{
+    if(!q) return true;
+    const blob = `${c.nome} ${c.azienda||''} ${c.email||''}`.toLowerCase();
+    return blob.includes(q);
+  });
+  const container = $('#clienti-grid');
+  $('#clienti-empty').style.display = list.length ? 'none' : 'block';
+
+  container.innerHTML = list.map(c=>{
+    const ordiniCliente = orders.filter(o=>o.clienteId===c.id && o.status!=='annullato');
+    const totaleSpeso = ordiniCliente.filter(o=>o.status==='pagato').reduce((a,o)=>a+(Number(o.totale)||0),0);
+    const totaleSospeso = ordiniCliente.filter(o=>ORDER_STATUS_SOSPESO.includes(o.status)).reduce((a,o)=>a+(Number(o.totale)||0),0);
+    const ultimoOrdine = ordiniCliente.length ? new Date(Math.max(...ordiniCliente.map(o=>new Date(o.createdAt).getTime()))) : null;
+    return `
+    <div class="card">
+      <div class="card-title">
+        <div class="mat">${c.azienda || 'Privato'}</div>
+        <h3>${c.nome}</h3>
+        <div class="brand-line">${c.email || c.telefono || 'Nessun contatto'}</div>
+      </div>
+      <div class="card-meta">
+        <span>Ordini: <b>${ordiniCliente.length}</b></span>
+        <span>Incassato: <b style="${totaleSpeso>0?'color:var(--teal)':''}">€${totaleSpeso.toFixed(2)}</b></span>
+        ${totaleSospeso>0 ? `<span>In sospeso: <b style="color:var(--amber)">€${totaleSospeso.toFixed(2)}</b></span>` : ''}
+      </div>
+      ${ultimoOrdine ? `<div style="font-size:11.5px;color:var(--muted);">Ultimo ordine: ${ultimoOrdine.toLocaleDateString('it-IT')}</div>` : ''}
+      ${c.note ? `<div style="font-size:11.5px;color:var(--muted);">${c.note}</div>` : ''}
+      <div class="card-actions" style="grid-template-columns:1fr 1fr;">
+        <button data-cact="edit" data-id="${c.id}">Modifica</button>
+        <button data-cact="delete" data-id="${c.id}" style="color:var(--red)">Elimina</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+$('#clienti-search').addEventListener('input', renderClienti);
+
+$('#clienti-grid').addEventListener('click', async e=>{
+  const btn = e.target.closest('button[data-cact]');
+  if(!btn) return;
+  const id = btn.dataset.id;
+  const c = clienti.find(x=>x.id===id);
+  if(!c) return;
+  if(btn.dataset.cact==='edit'){
+    openClienteModal(c);
+  } else if(btn.dataset.cact==='delete'){
+    const ordiniCollegati = orders.filter(o=>o.clienteId===id).length;
+    const msg = ordiniCollegati>0
+      ? `Questo cliente ha ${ordiniCollegati} ordini registrati nello storico. Eliminarlo non cancella gli ordini, ma perderai il collegamento. Continuare?`
+      : `Eliminare "${c.nome}" dall'anagrafica?`;
+    if(confirm(msg)){
+      clienti = clienti.filter(x=>x.id!==id);
+      await saveClienti(); renderClienti();
+    }
+  }
+});
+
+$('#btn-cliente-add').addEventListener('click', ()=>openClienteModal(null));
+
+function openClienteModal(c){
+  editingClienteId = c ? c.id : null;
+  $('#cliente-modal-title').textContent = c ? 'Modifica cliente' : 'Nuovo cliente';
+  $('#btn-cliente-delete').style.display = c ? 'inline-block' : 'none';
+  $('#c-id').value = c ? c.id : '';
+  $('#c-nome').value = c ? c.nome : '';
+  $('#c-azienda').value = c ? (c.azienda||'') : '';
+  $('#c-email').value = c ? (c.email||'') : '';
+  $('#c-telefono').value = c ? (c.telefono||'') : '';
+  $('#c-indirizzo').value = c ? (c.indirizzo||'') : '';
+  $('#c-note').value = c ? (c.note||'') : '';
+  $('#overlay-cliente').style.display = 'flex';
+}
+function closeClienteModal(){ $('#overlay-cliente').style.display = 'none'; editingClienteId = null; }
+
+$('#btn-cliente-cancel').addEventListener('click', closeClienteModal);
+$('#overlay-cliente').addEventListener('click', e=>{ if(e.target.id==='overlay-cliente') closeClienteModal(); });
+
+$('#btn-cliente-save').addEventListener('click', async ()=>{
+  const nome = $('#c-nome').value.trim();
+  if(!nome){ alert('Inserisci il nome del cliente.'); return; }
+  const azienda = $('#c-azienda').value.trim();
+  const email = $('#c-email').value.trim();
+  const telefono = $('#c-telefono').value.trim();
+  const indirizzo = $('#c-indirizzo').value.trim();
+  const note = $('#c-note').value.trim();
+
+  if(editingClienteId){
+    const c = clienti.find(x=>x.id===editingClienteId);
+    Object.assign(c, {nome, azienda, email, telefono, indirizzo, note});
+  } else {
+    clienti.push({id: uid(), nome, azienda, email, telefono, indirizzo, note, createdAt: Date.now()});
+  }
+  await saveClienti();
+  closeClienteModal();
+  renderClienti();
+  populateClienteSelect();
+});
+
+$('#btn-cliente-delete').addEventListener('click', async ()=>{
+  if(!editingClienteId) return;
+  if(!confirm('Eliminare questo cliente dall\'anagrafica?')) return;
+  clienti = clienti.filter(x=>x.id!==editingClienteId);
+  await saveClienti();
+  closeClienteModal();
+  renderClienti();
+  populateClienteSelect();
+});
+
+function populateClienteSelect(){
+  const sel = $('#calc-cliente');
+  if(!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Nessuno / uso interno</option>' +
+    clienti.map(c=>`<option value="${c.id}">${c.nome}${c.azienda ? ' — '+c.azienda : ''}</option>`).join('');
+  sel.value = cur;
+}
+
+/* ---------- RICAMBI E MANUTENZIONE ---------- */
+const RICAMBI_KEY = 'maintenance_parts';
+let ricambi = [];
+let editingRicambioId = null;
+
+async function loadRicambi(){
+  try{
+    const res = await storageGet(RICAMBI_KEY);
+    ricambi = res && res.value ? JSON.parse(res.value) : [];
+  }catch(e){
+    ricambi = [];
+  }
+}
+async function saveRicambi(){
+  await storageSet(RICAMBI_KEY, JSON.stringify(ricambi));
+}
+
+/* ---------- LOG ACQUISTI RICAMBI ---------- */
+const RICAMBI_LOG_KEY = 'ricambi_purchase_log';
+let ricambiPurchaseLog = [];
+async function loadRicambiPurchaseLog(){
+  try{
+    const res = await storageGet(RICAMBI_LOG_KEY);
+    ricambiPurchaseLog = res && res.value ? JSON.parse(res.value) : [];
+  }catch(e){
+    ricambiPurchaseLog = [];
+  }
+}
+async function saveRicambiPurchaseLog(){
+  await storageSet(RICAMBI_LOG_KEY, JSON.stringify(ricambiPurchaseLog));
+}
+async function logRicambioPurchase(ricambio, quantita){
+  if(!ricambio || quantita<=0) return;
+  ricambiPurchaseLog.push({
+    id: uid(),
+    date: new Date().toISOString(),
+    ricambioId: ricambio.id,
+    nome: ricambio.nome,
+    categoria: ricambio.categoria,
+    quantita,
+    costo: (Number(ricambio.prezzo)||0) * quantita
+  });
+  await saveRicambiPurchaseLog();
+}
+
+function renderRicambi(){
+  const q = ($('#ricambi-search').value||'').trim().toLowerCase();
+  const list = ricambi.filter(r=>{
+    if(!q) return true;
+    const blob = `${r.nome} ${r.categoria} ${r.stampante} ${r.fornitore||''}`.toLowerCase();
+    return blob.includes(q);
+  });
+
+  // Recap spese: sempre calcolato su TUTTI i ricambi, non solo sui filtrati dalla ricerca
+  const totalePezzi = ricambi.reduce((a,r)=>a+(Number(r.quantita)||0),0);
+  const valoreScorta = ricambi.reduce((a,r)=>a+(Number(r.prezzo)||0)*(Number(r.quantita)||0),0);
+  const sottoScorta = ricambi.filter(r=>Number(r.quantita) <= Number(r.quantitaMin)).length;
+  $('#ric-stat-totale').textContent = ricambi.length;
+  $('#ric-stat-pezzi').textContent = totalePezzi;
+  $('#ric-stat-valore').textContent = '€' + valoreScorta.toFixed(2);
+  $('#ric-stat-basse').textContent = sottoScorta;
+
+  const byCat = {};
+  ricambi.forEach(r=>{
+    const cat = r.categoria || 'Altro';
+    byCat[cat] = (byCat[cat]||0) + (Number(r.prezzo)||0)*(Number(r.quantita)||0);
+  });
+  const catEntries = Object.entries(byCat).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+  $('#ric-stat-categorie').innerHTML = catEntries.length ? `
+    <h4 style="margin:0 0 10px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Valore scorta per categoria</h4>
+    <div id="ric-bars-cat"></div>
+  ` : '';
+  if(catEntries.length){
+    barChart('#ric-bars-cat', catEntries.map(([k,v])=>({label:k, value:v})), v=>'€'+v.toFixed(0));
+  }
+
+  const container = $('#ricambi-grid');
+  $('#ricambi-empty').style.display = list.length ? 'none' : 'block';
+  container.innerHTML = list.map(r=>{
+    const low = r.quantita <= r.quantitaMin;
+    return `
+    <div class="card ${low?'low':''}">
+      ${low ? '<div class="low-flag" title="Scorta bassa"></div>' : ''}
+      <div class="card-title">
+        <div class="mat">${r.categoria || 'Ricambio'}</div>
+        <h3>${r.nome}</h3>
+        <div class="brand-line">${r.stampante || 'Tutte le stampanti'}</div>
+      </div>
+      <div class="card-meta">
+        <span>Scorta: <b style="${low?'color:var(--red)':''}">${r.quantita} pz</b></span>
+        <span>Soglia minima: <b>${r.quantitaMin} pz</b></span>
+      </div>
+      ${Number(r.prezzo)>0 ? `<div class="card-meta">
+        <span>Prezzo unitario: <b>€${Number(r.prezzo).toFixed(2)}</b></span>
+        <span>Valore scorta: <b>€${(Number(r.prezzo)*r.quantita).toFixed(2)}</b></span>
+      </div>` : ''}
+      ${r.fornitore ? `<div style="font-size:11.5px;color:var(--muted);">Fornitore: ${r.fornitore}</div>` : ''}
+      ${r.note ? `<div style="font-size:11.5px;color:var(--muted);">${r.note}</div>` : ''}
+      <div class="card-actions">
+        <button data-ract="edit" data-id="${r.id}">Modifica</button>
+        <button data-ract="use" data-id="${r.id}">− Usa 1</button>
+        <button data-ract="add" data-id="${r.id}">+ Ricevi</button>
+        <button data-ract="delete" data-id="${r.id}" style="color:var(--red)">Elimina</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+$('#ricambi-search').addEventListener('input', renderRicambi);
+
+$('#ricambi-grid').addEventListener('click', async e=>{
+  const btn = e.target.closest('button[data-ract]');
+  if(!btn) return;
+  const id = btn.dataset.id;
+  const r = ricambi.find(x=>x.id===id);
+  if(!r) return;
+  if(btn.dataset.ract==='edit'){
+    openRicambioModal(r);
+  } else if(btn.dataset.ract==='delete'){
+    if(confirm(`Eliminare "${r.nome}" dai ricambi?`)){
+      ricambi = ricambi.filter(x=>x.id!==id);
+      await saveRicambi(); renderRicambi();
+    }
+  } else if(btn.dataset.ract==='use'){
+    r.quantita = Math.max(0, r.quantita-1);
+    await saveRicambi(); renderRicambi();
+  } else if(btn.dataset.ract==='add'){
+    r.quantita = r.quantita+1;
+    await logRicambioPurchase(r, 1);
+    await saveRicambi(); renderRicambi();
+  }
+});
+
+$('#btn-ricambio-add').addEventListener('click', ()=>openRicambioModal(null));
+
+function populateRicambiSelects(){
+  const sel = $('#r-stampante');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="Tutte">Tutte le stampanti</option>' +
+    printerFleet.map(p=>`<option value="${p.nome}">${p.nome}</option>`).join('');
+  sel.value = cur || 'Tutte';
+
+  const nomi = [...new Set(ricambi.map(r=>r.nome))];
+  $('#ricambi-nomi-list').innerHTML = nomi.map(n=>`<option value="${n}">`).join('');
+}
+
+function openRicambioModal(r){
+  editingRicambioId = r ? r.id : null;
+  populateRicambiSelects();
+  $('#ricambio-modal-title').textContent = r ? 'Modifica ricambio' : 'Nuovo ricambio';
+  $('#btn-ricambio-delete').style.display = r ? 'inline-block' : 'none';
+  $('#r-id').value = r ? r.id : '';
+  $('#r-nome').value = r ? r.nome : '';
+  $('#r-categoria').value = r ? r.categoria : '';
+  $('#r-stampante').value = r ? (r.stampante||'Tutte') : 'Tutte';
+  $('#r-quantita').value = r ? r.quantita : 5;
+  $('#r-quantita-min').value = r ? r.quantitaMin : 2;
+  $('#r-prezzo').value = r ? (r.prezzo||0) : 0;
+  $('#r-fornitore').value = r ? (r.fornitore||'') : '';
+  $('#r-note').value = r ? (r.note||'') : '';
+  $('#overlay-ricambio').style.display = 'flex';
+}
+function closeRicambioModal(){ $('#overlay-ricambio').style.display = 'none'; editingRicambioId = null; }
+
+$('#btn-ricambio-cancel').addEventListener('click', closeRicambioModal);
+$('#overlay-ricambio').addEventListener('click', e=>{ if(e.target.id==='overlay-ricambio') closeRicambioModal(); });
+
+$('#btn-ricambio-save').addEventListener('click', async ()=>{
+  const nome = $('#r-nome').value.trim();
+  if(!nome){ alert('Inserisci il nome del ricambio.'); return; }
+  const categoria = $('#r-categoria').value.trim() || 'Altro';
+  const stampante = $('#r-stampante').value;
+  const quantita = Number($('#r-quantita').value) || 0;
+  const quantitaMin = Number($('#r-quantita-min').value) || 0;
+  const prezzo = Number($('#r-prezzo').value) || 0;
+  const fornitore = $('#r-fornitore').value.trim();
+  const note = $('#r-note').value.trim();
+
+  if(editingRicambioId){
+    const r = ricambi.find(x=>x.id===editingRicambioId);
+    Object.assign(r, {nome, categoria, stampante, quantita, quantitaMin, prezzo, fornitore, note});
+  } else {
+    const newR = {id: uid(), nome, categoria, stampante, quantita, quantitaMin, prezzo, fornitore, note, createdAt: Date.now()};
+    ricambi.push(newR);
+    if(quantita>0) await logRicambioPurchase(newR, quantita);
+  }
+  await saveRicambi();
+  closeRicambioModal();
+  renderRicambi();
+});
+
+$('#btn-ricambio-delete').addEventListener('click', async ()=>{
+  if(!editingRicambioId) return;
+  if(!confirm('Eliminare questo ricambio dal magazzino?')) return;
+  ricambi = ricambi.filter(x=>x.id!==editingRicambioId);
+  await saveRicambi();
+  closeRicambioModal();
+  renderRicambi();
+});
+
+$('#btn-export').addEventListener('click', async ()=>{
+  const cfg = {};
+  cfgIds.forEach(id=>{ const el = $('#'+id); if(el) cfg[id] = el.value; });
+
+  const backup = {
+    tipo: 'spoolbase-backup',
+    versione: 6,
+    dataEsportazione: new Date().toISOString(),
+    spools,
+    ricambi,
+    printerFleet,
+    consumptionLog,
+    ricambiPurchaseLog,
+    salesLog,
+    orders,
+    clienti,
+    costSettings: cfg
+  };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const stamp = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = `backup-spoolbase-${stamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+
+  await storageSet(LAST_BACKUP_KEY, new Date().toISOString());
+  checkBackupReminder();
+});
+
+$('#btn-import').addEventListener('click', ()=>{
+  $('#file-import').click();
+});
+
+$('#file-import').addEventListener('change', async (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  try{
+    const text = await file.text();
+    const imported = JSON.parse(text);
+
+    // Formato vecchio: solo array di bobine
+    const isLegacy = Array.isArray(imported);
+    const importedSpools = isLegacy ? imported : (imported.spools || []);
+    const importedRicambi = isLegacy ? [] : (imported.ricambi || []);
+    const importedFleet = isLegacy ? [] : (imported.printerFleet || []);
+    const importedLog = isLegacy ? [] : (imported.consumptionLog || []);
+    const importedRicambiLog = isLegacy ? [] : (imported.ricambiPurchaseLog || []);
+    const importedSalesLog = isLegacy ? [] : (imported.salesLog || []);
+    const importedOrders = isLegacy ? [] : (imported.orders || []);
+    const importedClienti = isLegacy ? [] : (imported.clienti || []);
+    const importedCfg = isLegacy ? null : (imported.costSettings || null);
+
+    const mode = confirm(
+      'OK = Unisci ai dati attuali (evita duplicati per ID)\nAnnulla = Sostituisci completamente tutti i dati (bobine, ricambi, flotta, log, impostazioni)'
+    );
+
+    if(mode){
+      const existingSpoolIds = new Set(spools.map(s=>s.id));
+      importedSpools.forEach(s=>{ if(!existingSpoolIds.has(s.id)) spools.push(s); });
+
+      const existingRicambiIds = new Set(ricambi.map(r=>r.id));
+      importedRicambi.forEach(r=>{ if(!existingRicambiIds.has(r.id)) ricambi.push(r); });
+
+      const existingFleetIds = new Set(printerFleet.map(p=>p.id));
+      importedFleet.forEach(p=>{ if(!existingFleetIds.has(p.id)) printerFleet.push(p); });
+
+      const existingLogIds = new Set(consumptionLog.map(l=>l.id));
+      importedLog.forEach(l=>{ if(!existingLogIds.has(l.id)) consumptionLog.push(l); });
+
+      const existingRicambiLogIds = new Set(ricambiPurchaseLog.map(l=>l.id));
+      importedRicambiLog.forEach(l=>{ if(!existingRicambiLogIds.has(l.id)) ricambiPurchaseLog.push(l); });
+
+      const existingSalesIds = new Set(salesLog.map(s=>s.id));
+      importedSalesLog.forEach(s=>{ if(!existingSalesIds.has(s.id)) salesLog.push(s); });
+
+      const existingOrderIds = new Set(orders.map(o=>o.id));
+      importedOrders.forEach(o=>{ if(!existingOrderIds.has(o.id)) orders.push(o); });
+
+      const existingClientiIds = new Set(clienti.map(c=>c.id));
+      importedClienti.forEach(c=>{ if(!existingClientiIds.has(c.id)) clienti.push(c); });
+    } else {
+      spools = importedSpools;
+      ricambi = importedRicambi;
+      if(importedFleet.length) printerFleet = importedFleet;
+      consumptionLog = importedLog;
+      ricambiPurchaseLog = importedRicambiLog;
+      salesLog = importedSalesLog;
+      orders = importedOrders;
+      clienti = importedClienti;
+      if(importedCfg){
+        cfgIds.forEach(id=>{ if(importedCfg[id]!==undefined){ const el=$('#'+id); if(el) el.value = importedCfg[id]; } });
+        await saveCostSettings();
+      }
+    }
+
+    syncSalesLogIntoOrders(); // copre backup vecchi (v4 e precedenti) con solo salesLog, senza pipeline ordini
+
+    await saveSpools();
+    await saveRicambi();
+    await savePrinterFleet();
+    await saveConsumptionLog();
+    await saveRicambiPurchaseLog();
+    await saveSalesLog();
+    await saveOrdini();
+    await saveClienti();
+    populateClienteSelect();
+    render();
+    renderFleetRows();
+    renderRicambi();
+    renderOrdini();
+    renderBilancio();
+    alert(`Importazione completata: ${importedSpools.length} bobine, ${importedRicambi.length} ricambi${isLegacy ? ' (formato vecchio, solo bobine trovate)' : ''}.`);
+  }catch(err){
+    alert('Errore nel file di backup: ' + err.message);
+  }
+  e.target.value = '';
+});
+
+/* ---------- VISTA GRIGLIA / TABELLA ---------- */
+$('#view-grid').addEventListener('click', ()=>{
+  viewMode = 'grid';
+  $('#view-grid').classList.add('active');
+  $('#view-table').classList.remove('active');
+  render();
+});
+$('#view-table').addEventListener('click', ()=>{
+  viewMode = 'table';
+  $('#view-table').classList.add('active');
+  $('#view-grid').classList.remove('active');
+  render();
+});
+
+$('#btn-group-toggle').addEventListener('click', ()=>{
+  groupMode = !groupMode;
+  $('#btn-group-toggle').classList.toggle('active-group', groupMode);
+  $('#btn-group-toggle').style.background = groupMode ? 'var(--amber)' : '';
+  $('#btn-group-toggle').style.color = groupMode ? '#1a1208' : '';
+  $('#btn-group-toggle').style.borderColor = groupMode ? 'var(--amber)' : '';
+  if(!groupMode) expandedGroups.clear();
+  render();
+});
+
+/* ---------- STATISTICHE ---------- */
+function barChart(containerId, data, formatVal){
+  const el = $(containerId);
+  const max = Math.max(...data.map(d=>d.value), 0.0001);
+  el.innerHTML = data.map(d=>`
+    <div class="bar-row">
+      <div class="bar-label" title="${d.label}">${d.label}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(d.value/max*100).toFixed(1)}%"></div></div>
+      <div class="bar-value">${formatVal(d.value)}</div>
+    </div>
+  `).join('') || '<div style="color:var(--muted);font-size:13px;">Nessun dato disponibile.</div>';
+}
+
+function openStats(){
+  const totale = spools.length;
+  const valoreResiduo = spools.reduce((a,s)=>a+residualValue(s),0);
+  const investito = spools.reduce((a,s)=>a+(Number(s.prezzo)||0),0);
+  const kg = spools.reduce((a,s)=>a+(Number(s.pesoRim)||0),0)/1000;
+
+  $('#stats-summary').innerHTML = `
+    <div class="stat-block" style="flex:1;min-width:120px;"><div class="n">${totale}</div><div class="l">Bobine</div></div>
+    <div class="stat-block" style="flex:1;min-width:120px;"><div class="n">${kg.toFixed(1)}</div><div class="l">Kg rimanenti</div></div>
+    <div class="stat-block" style="flex:1;min-width:120px;"><div class="n" style="color:var(--teal)">€${valoreResiduo.toFixed(0)}</div><div class="l">Valore residuo</div></div>
+    <div class="stat-block" style="flex:1;min-width:120px;"><div class="n">€${investito.toFixed(0)}</div><div class="l">Investito</div></div>
+  `;
+
+  const byMat = {};
+  spools.forEach(s=>{ byMat[s.materiale] = (byMat[s.materiale]||0) + residualValue(s); });
+  barChart('#stats-bars-materiale',
+    Object.entries(byMat).sort((a,b)=>b[1]-a[1]).map(([k,v])=>({label:k, value:v})),
+    v=>'€'+v.toFixed(0));
+
+  const byMarca = {};
+  spools.forEach(s=>{ const k = s.marca||'Sconosciuta'; byMarca[k] = (byMarca[k]||0) + residualValue(s); });
+  barChart('#stats-bars-marca',
+    Object.entries(byMarca).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([k,v])=>({label:k, value:v})),
+    v=>'€'+v.toFixed(0));
+
+  const costGroups = {};
+  spools.forEach(s=>{
+    if(Number(s.prezzo)>0){
+      if(!costGroups[s.materiale]) costGroups[s.materiale] = [];
+      costGroups[s.materiale].push(costPerKg(s));
+    }
+  });
+  const costData = Object.entries(costGroups).map(([k,arr])=>({
+    label:k, value: arr.reduce((a,b)=>a+b,0)/arr.length
+  })).sort((a,b)=>b.value-a.value);
+  barChart('#stats-bars-costokg', costData, v=>'€'+v.toFixed(2));
+
+  $('#overlay-stats').style.display = 'flex';
+}
+$('#btn-stats').addEventListener('click', openStats);
+$('#btn-stats-close').addEventListener('click', ()=>$('#overlay-stats').style.display='none');
+$('#overlay-stats').addEventListener('click', e=>{ if(e.target.id==='overlay-stats') $('#overlay-stats').style.display='none'; });
+
+/* ---------- CALCOLATORE COSTO STAMPA COMPLETO ---------- */
+const CFG_KEY = 'cost_settings';
+const cfgIds = ['cfg-kwh','cfg-investimento','cfg-anni','cfg-ore-giorno','cfg-manutenzione','cfg-scarto','cfg-ricarico','cfg-iva',
+  'cfg-nome-attivita','cfg-piva','cfg-email','cfg-telefono','cfg-indirizzo'];
+let calcRows = []; // [{rowId, spoolId, grammi}]
+let printerRows = []; // [{rowId, printer, ore}]
+
+/* ---------- FLOTTA STAMPANTI (gestibile) ---------- */
+const FLEET_KEY = 'printer_fleet';
+let printerFleet = [];
+
+async function loadPrinterFleet(){
+  try{
+    const res = await storageGet(FLEET_KEY);
+    printerFleet = res && res.value ? JSON.parse(res.value) : [];
+  }catch(e){
+    printerFleet = [];
+  }
+  if(!printerFleet.length){
+    printerFleet = [
+      {id: uid(), nome:'K2 Plus (grande)', watt:500},
+      {id: uid(), nome:'K1C #1 (piccola)', watt:400},
+      {id: uid(), nome:'K1C #2 (piccola)', watt:400},
+    ];
+    await savePrinterFleet();
+  }
+  renderFleetRows();
+}
+async function savePrinterFleet(){
+  await storageSet(FLEET_KEY, JSON.stringify(printerFleet));
+}
+
+function renderFleetRows(){
+  const container = $('#fleet-page-rows');
+  if(!container) return;
+  container.innerHTML = printerFleet.map(p=>`
+    <div class="fleet-row" data-id="${p.id}" style="background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;">
+      <input type="text" class="fleet-nome" value="${p.nome}" placeholder="Nome stampante">
+      <input type="number" class="fleet-watt" value="${p.watt}" min="0" placeholder="Watt">
+      <span style="color:var(--muted);font-size:12px;flex-shrink:0;">W</span>
+      <button type="button" class="fleet-remove" title="Rimuovi dalla flotta">✕</button>
+    </div>
+  `).join('') || '<div style="color:var(--muted);font-size:13px;">Nessuna stampante in flotta.</div>';
+
+  container.querySelectorAll('.fleet-row').forEach(el=>{
+    const id = el.dataset.id;
+    el.querySelector('.fleet-nome').addEventListener('input', async e=>{
+      printerFleet.find(p=>p.id===id).nome = e.target.value;
+      await savePrinterFleet();
+      renderPrinterRows();
+    });
+    el.querySelector('.fleet-watt').addEventListener('input', async e=>{
+      printerFleet.find(p=>p.id===id).watt = Number(e.target.value)||0;
+      await savePrinterFleet();
+      updateCalc();
+    });
+    el.querySelector('.fleet-remove').addEventListener('click', async ()=>{
+      printerFleet = printerFleet.filter(p=>p.id!==id);
+      printerRows = printerRows.filter(r=>r.printer!==id);
+      await savePrinterFleet();
+      renderFleetRows();
+      renderPrinterRows();
+      updateCalc();
+    });
+  });
+}
+$('#btn-fleet-page-add').addEventListener('click', async ()=>{
+  printerFleet.push({id: uid(), nome:'Nuova stampante', watt:400});
+  await savePrinterFleet();
+  renderFleetRows();
+  renderPrinterRows();
+});
+
+function printerWatt(printerId){
+  const p = printerFleet.find(p=>p.id===printerId);
+  return p ? Number(p.watt)||0 : 0;
+}
+
+function renderPrinterRows(){
+  const container = $('#printer-rows');
+  container.innerHTML = printerRows.map(row=>`
+    <div class="calc-row" data-row="${row.rowId}">
+      <select class="printer-row-select">
+        ${printerFleet.map(p=>`<option value="${p.id}" ${p.id===row.printer?'selected':''}>${p.nome} (${p.watt}W)</option>`).join('')}
+      </select>
+      <input type="number" class="printer-row-ore" min="0" step="0.1" value="${row.ore}" placeholder="ore">
+      <button type="button" class="printer-row-remove" title="Rimuovi stampante">✕</button>
+    </div>
+  `).join('') || '<div style="color:var(--muted);font-size:13px;">Nessuna stampante aggiunta.</div>';
+
+  container.querySelectorAll('.calc-row').forEach(el=>{
+    const rowId = el.dataset.row;
+    el.querySelector('.printer-row-select').addEventListener('change', e=>{
+      printerRows.find(r=>r.rowId===rowId).printer = e.target.value;
+      updateCalc();
+    });
+    el.querySelector('.printer-row-ore').addEventListener('input', e=>{
+      printerRows.find(r=>r.rowId===rowId).ore = Number(e.target.value)||0;
+      updateCalc();
+    });
+    el.querySelector('.printer-row-remove').addEventListener('click', ()=>{
+      printerRows = printerRows.filter(r=>r.rowId!==rowId);
+      renderPrinterRows();
+      updateCalc();
+    });
+  });
+}
+
+$('#btn-calc-add-printer').addEventListener('click', ()=>{
+  const def = printerFleet[0] ? printerFleet[0].id : '';
+  printerRows.push({rowId: uid(), printer:def, ore:3});
+  renderPrinterRows();
+  updateCalc();
+});
+
+async function loadCostSettings(){
+  try{
+    const res = await storageGet(CFG_KEY);
+    if(res && res.value){
+      const cfg = JSON.parse(res.value);
+      cfgIds.forEach(id=>{ if(cfg[id]!==undefined) $('#'+id).value = cfg[id]; });
+    }
+  }catch(e){ /* usa i default già nel markup */ }
+}
+async function saveCostSettings(){
+  const cfg = {};
+  cfgIds.forEach(id=>{ cfg[id] = $('#'+id).value; });
+  await storageSet(CFG_KEY, JSON.stringify(cfg));
+}
+
+function openCalc(){
+  const usable = spools.filter(s=>s.stato!=='esaurita');
+  calcRows = usable.length ? [{rowId: uid(), spoolId: usable[0].id, grammi: 50}] : [];
+  const defPrinter = printerFleet[0] ? printerFleet[0].id : '';
+  printerRows = defPrinter ? [{rowId: uid(), printer:defPrinter, ore:3}] : [];
+  renderFleetRows();
+  renderCalcRows();
+  renderPrinterRows();
+  populateClienteSelect();
+  $('#calc-cliente').value = '';
+  updateCalc();
+  $('#overlay-calc').style.display = 'flex';
+}
+
+function renderCalcRows(){
+  const usable = spools.filter(s=>s.stato!=='esaurita');
+  const container = $('#calc-rows');
+  if(!usable.length){
+    container.innerHTML = '<div style="color:var(--muted);font-size:13px;">Nessuna bobina disponibile (tutte esaurite).</div>';
+    return;
+  }
+  container.innerHTML = calcRows.map(row=>`
+    <div class="calc-row" data-row="${row.rowId}">
+      <select class="calc-row-spool">
+        ${usable.map(s=>`<option value="${s.id}" ${s.id===row.spoolId?'selected':''}>${s.coloreNome} · ${s.materiale} · ${s.marca||'—'} (${s.pesoRim}g rimasti)</option>`).join('')}
+      </select>
+      <input type="number" class="calc-row-grammi" min="0" value="${row.grammi}" placeholder="grammi">
+      <button type="button" class="calc-row-remove" title="Rimuovi bobina">✕</button>
+    </div>
+  `).join('');
+
+  container.querySelectorAll('.calc-row').forEach(el=>{
+    const rowId = el.dataset.row;
+    el.querySelector('.calc-row-spool').addEventListener('change', e=>{
+      calcRows.find(r=>r.rowId===rowId).spoolId = e.target.value;
+      updateCalc();
+    });
+    el.querySelector('.calc-row-grammi').addEventListener('input', e=>{
+      calcRows.find(r=>r.rowId===rowId).grammi = Number(e.target.value)||0;
+      updateCalc();
+    });
+    el.querySelector('.calc-row-remove').addEventListener('click', ()=>{
+      calcRows = calcRows.filter(r=>r.rowId!==rowId);
+      renderCalcRows();
+      updateCalc();
+    });
+  });
+}
+
+$('#btn-calc-add-row').addEventListener('click', ()=>{
+  const usable = spools.filter(s=>s.stato!=='esaurita');
+  if(!usable.length) return;
+  const already = calcRows.map(r=>r.spoolId);
+  const next = usable.find(s=>!already.includes(s.id)) || usable[0];
+  calcRows.push({rowId: uid(), spoolId: next.id, grammi: 50});
+  renderCalcRows();
+  updateCalc();
+});
+
+function updateCalc(){
+  const extra = Number($('#calc-extra').value) || 0;
+  const pre = Number($('#calc-pre').value) || 0;
+  const post = Number($('#calc-post').value) || 0;
+
+  const kwhPrice = Number($('#cfg-kwh').value) || 0;
+  const investimento = Number($('#cfg-investimento').value) || 0;
+  const anni = Number($('#cfg-anni').value) || 1;
+  const oreGiorno = Number($('#cfg-ore-giorno').value) || 1;
+  const manutPct = Number($('#cfg-manutenzione').value) || 0;
+  const scartoPct = Number($('#cfg-scarto').value) || 0;
+
+  const oreVitaUtile = anni * 365 * oreGiorno;
+  const ammortoOra = oreVitaUtile > 0 ? investimento / oreVitaUtile : 0;
+  const manutenzioneAnnua = investimento * (manutPct/100);
+  const manutenzioneOra = (365*oreGiorno) > 0 ? manutenzioneAnnua / (365*oreGiorno) : 0;
+  const overheadOraPerMacchina = ammortoOra + manutenzioneOra;
+
+  let energiaCost = 0, overheadCost = 0, printerRighe = [];
+  printerRows.forEach(row=>{
+    const watt = printerWatt(row.printer);
+    const label = printerFleet.find(p=>p.id===row.printer)?.nome || row.printer;
+    const e = (watt/1000) * kwhPrice * row.ore;
+    const o = overheadOraPerMacchina * row.ore;
+    energiaCost += e;
+    overheadCost += o;
+    printerRighe.push(`${label} (${row.ore}h): energia €${e.toFixed(2)} + macchina €${o.toFixed(2)}`);
+  });
+
+  let filamentoBase = 0;
+  let filamentoRighe = [];
+  calcRows.forEach(row=>{
+    const spool = spools.find(s=>s.id===row.spoolId);
+    if(!spool) return;
+    const c = (costPerKg(spool)/1000) * row.grammi;
+    filamentoBase += c;
+    filamentoRighe.push(`${spool.coloreNome} (${row.grammi}g): €${c.toFixed(2)}`);
+  });
+  const filamentoConScarto = filamentoBase * (1 + scartoPct/100);
+
+  const totale = filamentoConScarto + energiaCost + overheadCost + extra + pre + post;
+
+  $('#calc-costo').textContent = '€' + totale.toFixed(2);
+  $('#calc-dettaglio').innerHTML = `
+    Filamento base: <b style="color:var(--text)">€${filamentoBase.toFixed(2)}</b> ${filamentoRighe.length ? '<br><span style="font-size:11px;opacity:.8">'+filamentoRighe.join(' · ')+'</span>' : ''}<br>
+    + Scarto/margine ${scartoPct}%: <b style="color:var(--text)">€${(filamentoConScarto-filamentoBase).toFixed(2)}</b> → totale filamento: <b style="color:var(--text)">€${filamentoConScarto.toFixed(2)}</b><br>
+    Energia totale: <b style="color:var(--text)">€${energiaCost.toFixed(2)}</b><br>
+    Ammortamento + manutenzione macchine: <b style="color:var(--text)">€${overheadCost.toFixed(2)}</b>
+    ${printerRighe.length ? '<br><span style="font-size:11px;opacity:.8">'+printerRighe.join(' · ')+'</span>' : ''}<br>
+    Materiali extra: <b style="color:var(--text)">€${extra.toFixed(2)}</b><br>
+    Pre-produzione: <b style="color:var(--text)">€${pre.toFixed(2)}</b><br>
+    Post-produzione: <b style="color:var(--text)">€${post.toFixed(2)}</b>
+    ${!calcRows.length ? '<br><span style="color:var(--red)">Nessuna bobina selezionata.</span>' : ''}
+    ${!printerRows.length ? '<br><span style="color:var(--red)">Nessuna stampante selezionata.</span>' : ''}
+  `;
+
+  saveCostSettings();
+}
+
+$('#btn-calc').addEventListener('click', openCalc);
+$('#btn-calc-close').addEventListener('click', ()=>$('#overlay-calc').style.display='none');
+$('#overlay-calc').addEventListener('click', e=>{ if(e.target.id==='overlay-calc') $('#overlay-calc').style.display='none'; });
+
+/* ---------- PREVENTIVO STAMPABILE ---------- */
+let lastPreventivo = null;
+
+const SALES_KEY = 'sales_log';
+let salesLog = [];
+async function loadSalesLog(){
+  try{
+    const res = await storageGet(SALES_KEY);
+    salesLog = res && res.value ? JSON.parse(res.value) : [];
+  }catch(e){
+    salesLog = [];
+  }
+}
+async function saveSalesLog(){
+  await storageSet(SALES_KEY, JSON.stringify(salesLog));
+}
+
+/* ---------- ORDINI (pipeline stati) ---------- */
+const ORDERS_KEY = 'ordini_log';
+const SALES_MIGR_KEY = 'sales_migrated_v1';
+let orders = [];
+
+const ORDER_STATUS_FLOW = ['preventivo','inviato','accettato','in_stampa','post_produzione','pronto','consegnato','pagato'];
+const ORDER_STATUS_LABELS = {
+  preventivo: '📝 Preventivo generato',
+  inviato: '📤 Inviato al cliente',
+  accettato: '👍 Accettato',
+  in_stampa: '🖨 In stampa',
+  post_produzione: '🧰 Post-produzione',
+  pronto: '📦 Pronto',
+  consegnato: '🚚 Consegnato',
+  pagato: '💶 Pagato',
+  annullato: '🚫 Annullato'
+};
+// Stati per cui il cliente ha confermato l'ordine ma non è ancora stato incassato
+const ORDER_STATUS_SOSPESO = ['accettato','in_stampa','post_produzione','pronto','consegnato'];
+// Stati per cui il pezzo è ancora da produrre/consegnare fisicamente
+const ORDER_STATUS_DA_CONSEGNARE = ['accettato','in_stampa','post_produzione','pronto'];
+// Dopo quanti giorni fermo nello stesso stato un ordine attivo viene segnalato come "fermo"
+const ORDER_STALE_DAYS = 7;
+
+async function loadOrdini(){
+  try{
+    const res = await storageGet(ORDERS_KEY);
+    orders = res && res.value ? JSON.parse(res.value) : [];
+  }catch(e){
+    orders = [];
+  }
+}
+async function saveOrdini(){
+  await storageSet(ORDERS_KEY, JSON.stringify(orders));
+}
+
+// Migrazione una tantum: i vecchi backup/salvataggi avevano solo salesLog
+// (vendita diretta, senza pipeline). Li convertiamo in ordini con stato "pagato",
+// perché all'epoca "Segna come venduto" registrava un incasso immediato.
+// Converte in ordini (stato "pagato") ogni voce di salesLog priva già di un ordine
+// con lo stesso id. Idempotente: può essere richiamata più volte senza duplicare nulla.
+function syncSalesLogIntoOrders(){
+  if(!salesLog.length) return false;
+  const existingIds = new Set(orders.map(o=>o.id));
+  let added = false;
+  salesLog.forEach(s=>{
+    if(existingIds.has(s.id)) return;
+    orders.push({
+      id: s.id,
+      createdAt: s.date,
+      clienteId: s.clienteId || null,
+      clienteNome: s.clienteNome || null,
+      descrizione: s.descrizione || 'Stampa 3D',
+      imponibile: s.imponibile,
+      iva: s.iva,
+      totale: s.totale,
+      status: 'pagato',
+      statusDates: { preventivo: s.date, pagato: s.date },
+      dataConsegnaPrevista: null,
+      materiali: [],
+      costoMaterialeBase: 0,
+      materialeScalato: false,
+      note: ''
+    });
+    existingIds.add(s.id);
+    added = true;
+  });
+  return added;
+}
+
+async function migrateSalesLogToOrdiniIfNeeded(){
+  let already = false;
+  try{
+    const res = await storageGet(SALES_MIGR_KEY);
+    already = !!(res && res.value === '1');
+  }catch(e){ already = false; }
+  if(!already){
+    if(syncSalesLogIntoOrders()) await saveOrdini();
+    await storageSet(SALES_MIGR_KEY, '1');
+  }
+}
+
+function creaOrdineDaPreventivo(p){
+  const now = new Date().toISOString();
+  const ordine = {
+    id: uid(),
+    createdAt: now,
+    clienteId: p.clienteId || null,
+    clienteNome: p.clienteNome || null,
+    descrizione: p.descrizione,
+    imponibile: p.imponibile,
+    iva: p.iva,
+    totale: p.totale,
+    status: 'preventivo',
+    statusDates: { preventivo: now },
+    dataConsegnaPrevista: null,
+    materiali: p.materiali || [],
+    costoMaterialeBase: p.costoMaterialeBase || 0,
+    materialeScalato: false,
+    note: ''
+  };
+  orders.push(ordine);
+  return ordine;
+}
+
+async function setOrdineStato(id, nuovoStato){
+  const o = orders.find(x=>x.id===id);
+  if(!o) return;
+  o.status = nuovoStato;
+  o.statusDates = o.statusDates || {};
+  if(!o.statusDates[nuovoStato]) o.statusDates[nuovoStato] = new Date().toISOString();
+  await saveOrdini();
+  renderOrdini();
+  renderBilancio();
+  renderClienti();
+}
+
+async function setOrdineConsegnaPrevista(id, dataStr){
+  const o = orders.find(x=>x.id===id);
+  if(!o) return;
+  o.dataConsegnaPrevista = dataStr || null;
+  await saveOrdini();
+  renderOrdini();
+}
+
+// Scala fisicamente dalle bobine il materiale pianificato per l'ordine (una tantum),
+// collegando ogni riga di consumo all'id dell'ordine per la tracciabilità.
+async function scalaMaterialeOrdine(id){
+  const o = orders.find(x=>x.id===id);
+  if(!o || !o.materiali || !o.materiali.length || o.materialeScalato) return;
+
+  const righe = [];
+  const mancanti = [];
+  o.materiali.forEach(m=>{
+    const spool = spools.find(s=>s.id===m.spoolId);
+    if(!spool){ mancanti.push(`${m.coloreNome} (${m.materiale}) — bobina non più presente`); return; }
+    const usedG = Math.min(m.grammi, spool.pesoRim);
+    spool.pesoRim = Math.max(0, spool.pesoRim - m.grammi);
+    if(spool.stato === 'nuova') spool.stato = 'aperta';
+    spool.stato = normalizeStato(spool.stato, spool.pesoRim, spool.pesoTot);
+    logConsumption(spool, usedG, 'ordine', o.id);
+    righe.push(`${spool.coloreNome} (-${m.grammi}g)`);
+  });
+
+  if(!righe.length && mancanti.length){
+    alert(`Non è stato possibile scalare il materiale: nessuna delle bobine originali è più presente.\n\n${mancanti.join('\n')}`);
+    return;
+  }
+
+  o.materialeScalato = true;
+  await saveSpools();
+  await saveOrdini();
+  render();
+  renderOrdini();
+  let msg = `Materiale scalato per l'ordine "${o.descrizione}":\n${righe.join('\n')}`;
+  if(mancanti.length) msg += `\n\nAttenzione, non trovate:\n${mancanti.join('\n')}`;
+  alert(msg);
+}
+
+function giorniDa(dataIso){
+  const ms = Date.now() - new Date(dataIso).getTime();
+  return Math.floor(ms / 86400000);
+}
+// Giorni di ritardo sulla consegna prevista (negativo = giorni rimanenti, non ancora scaduta)
+// Confronto per sola data (senza orario), altrimenti una scadenza "di ieri" letta nel
+// pomeriggio di oggi risulterebbe erroneamente a meno di un giorno di distanza.
+function giorniRitardoConsegna(o){
+  if(!o.dataConsegnaPrevista) return null;
+  const oggi = new Date(); oggi.setHours(0,0,0,0);
+  const scadenza = new Date(o.dataConsegnaPrevista + 'T00:00:00');
+  return Math.round((oggi.getTime() - scadenza.getTime()) / 86400000);
+}
+function isOrdineInRitardo(o){
+  if(o.status==='pagato' || o.status==='annullato' || o.status==='consegnato') return false;
+  const g = giorniRitardoConsegna(o);
+  return g !== null && g > 0;
+}
+// Giorni trascorsi dall'ultimo cambio di stato (quanto è "fermo" nello stato attuale)
+function giorniFermoInStato(o){
+  const lastDate = (o.statusDates && o.statusDates[o.status]) || o.createdAt;
+  return giorniDa(lastDate);
+}
+function isOrdineFermo(o){
+  if(o.status==='pagato' || o.status==='annullato') return false;
+  return giorniFermoInStato(o) > ORDER_STALE_DAYS;
+}
+
+function renderOrdini(){
+  if(!$('#page-ordini')) return;
+  const q = ($('#ordini-search').value||'').trim().toLowerCase();
+  const filtro = $('#ordini-filtro-stato').value;
+
+  let list = [...orders];
+  if(q){
+    list = list.filter(o=>{
+      const blob = `${o.clienteNome||''} ${o.descrizione||''}`.toLowerCase();
+      return blob.includes(q);
+    });
+  }
+  if(filtro === '__attivi'){
+    list = list.filter(o=>o.status!=='pagato' && o.status!=='annullato');
+  } else if(filtro === '__sospeso'){
+    list = list.filter(o=>ORDER_STATUS_SOSPESO.includes(o.status));
+  } else if(filtro === '__consegna'){
+    list = list.filter(o=>ORDER_STATUS_DA_CONSEGNARE.includes(o.status));
+  } else if(filtro === '__ritardo'){
+    list = list.filter(isOrdineInRitardo);
+  } else if(filtro === '__fermi'){
+    list = list.filter(isOrdineFermo);
+  } else if(filtro){
+    list = list.filter(o=>o.status===filtro);
+  }
+
+  // ordini in ritardo o fermi vengono a galla per primi, poi per data di creazione
+  list.sort((a,b)=>{
+    const pa = (isOrdineInRitardo(a)||isOrdineFermo(a)) ? 1 : 0;
+    const pb = (isOrdineInRitardo(b)||isOrdineFermo(b)) ? 1 : 0;
+    if(pa!==pb) return pb-pa;
+    return new Date(b.createdAt)-new Date(a.createdAt);
+  });
+
+  $('#ordini-empty').style.display = list.length ? 'none' : 'block';
+
+  // statistiche (sempre su tutti gli ordini, non sul filtro)
+  const attivi = orders.filter(o=>o.status!=='pagato' && o.status!=='annullato');
+  const sospesoTot = orders.filter(o=>ORDER_STATUS_SOSPESO.includes(o.status)).reduce((a,o)=>a+(Number(o.totale)||0),0);
+  const daConsegnare = orders.filter(o=>ORDER_STATUS_DA_CONSEGNARE.includes(o.status));
+  const fermi = orders.filter(isOrdineFermo);
+  $('#ord-stat-attivi').textContent = attivi.length;
+  $('#ord-stat-sospeso').textContent = '€' + sospesoTot.toFixed(2);
+  $('#ord-stat-consegna').textContent = daConsegnare.length;
+  $('#ord-stat-fermi').textContent = fermi.length;
+
+  $('#ordini-grid').innerHTML = list.map(o=>{
+    const d = new Date(o.createdAt);
+    const dateStr = d.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'2-digit'});
+    const isFinale = o.status==='pagato' || o.status==='annullato';
+    const nextIdx = ORDER_STATUS_FLOW.indexOf(o.status);
+    const nextStatus = (nextIdx>=0 && nextIdx<ORDER_STATUS_FLOW.length-1) ? ORDER_STATUS_FLOW[nextIdx+1] : null;
+    const options = ORDER_STATUS_FLOW.map(s=>`<option value="${s}" ${s===o.status?'selected':''}>${ORDER_STATUS_LABELS[s]}</option>`).join('')
+      + `<option value="annullato" ${o.status==='annullato'?'selected':''}>${ORDER_STATUS_LABELS.annullato}</option>`;
+    const badgeColor = o.status==='pagato' ? 'var(--teal)' : (o.status==='annullato' ? 'var(--red)' : 'var(--amber)');
+
+    const inRitardo = isOrdineInRitardo(o);
+    const fermo = isOrdineFermo(o);
+    let scadenzaBadge = '';
+    if(o.dataConsegnaPrevista){
+      const gRit = giorniRitardoConsegna(o);
+      if(isFinale){
+        scadenzaBadge = `<span class="badge" style="background:var(--surface-2);color:var(--muted);">Consegna prevista: ${new Date(o.dataConsegnaPrevista).toLocaleDateString('it-IT')}</span>`;
+      } else if(gRit > 0){
+        scadenzaBadge = `<span class="badge esaurita">⚠ In ritardo di ${gRit}g</span>`;
+      } else if(gRit === 0){
+        scadenzaBadge = `<span class="badge aperta">⏰ Scade oggi</span>`;
+      } else {
+        scadenzaBadge = `<span class="badge nuova">Consegna prevista: ${new Date(o.dataConsegnaPrevista).toLocaleDateString('it-IT')} (tra ${-gRit}g)</span>`;
+      }
+    }
+    const fermoBadge = fermo ? `<span class="badge esaurita">⏳ Fermo da ${giorniFermoInStato(o)}g</span>` : '';
+
+    let materialiBlock = '';
+    if(o.materiali && o.materiali.length){
+      const elenco = o.materiali.map(m=>`${m.coloreNome} (${m.materiale}, ${m.grammi}g)`).join(', ');
+      if(o.materialeScalato){
+        materialiBlock = `<div style="font-size:11.5px;color:var(--muted);">📦 Materiale: ${elenco} — <span style="color:var(--teal)">✓ scalato dal magazzino</span></div>`;
+      } else if(!isFinale){
+        materialiBlock = `
+          <div style="font-size:11.5px;color:var(--muted);">📦 Materiale pianificato: ${elenco}</div>
+          <button data-oact="scala-materiale" data-id="${o.id}" class="btn secondary" style="width:100%;">📦 Scala materiale dal magazzino</button>`;
+      } else {
+        materialiBlock = `<div style="font-size:11.5px;color:var(--muted);">📦 Materiale: ${elenco} — <span style="color:var(--red)">non scalato</span></div>`;
+      }
+    }
+
+    return `
+    <div class="card ${inRitardo || fermo ? 'low' : ''}" id="ordine-card-${o.id}">
+      <div class="card-title">
+        <div class="mat">${o.clienteNome || 'Senza cliente'}</div>
+        <h3>${o.descrizione}</h3>
+        <div class="brand-line">Creato: ${dateStr}</div>
+        ${o.note ? `<div style="font-size:11.5px;color:var(--muted);font-style:italic;">📝 ${o.note}</div>` : ''}
+      </div>
+      <div class="card-meta">
+        <span>Totale: <b>€${Number(o.totale||0).toFixed(2)}</b></span>
+        <span>Stato: <b style="color:${badgeColor}">${ORDER_STATUS_LABELS[o.status] || o.status}</b></span>
+      </div>
+      ${scadenzaBadge || fermoBadge ? `<div style="display:flex;gap:6px;flex-wrap:wrap;">${scadenzaBadge}${fermoBadge}</div>` : ''}
+      ${materialiBlock}
+      <select data-oact="status" data-id="${o.id}" style="width:100%;">${options}</select>
+      <label style="font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:6px;">
+        Consegna prevista:
+        <input type="date" data-oact="consegna" data-id="${o.id}" value="${o.dataConsegnaPrevista || ''}" style="flex:1;">
+      </label>
+      <div class="card-actions" style="grid-template-columns:${nextStatus && !isFinale ? '1fr 1fr 1fr' : '1fr 1fr'};margin-top:8px;">
+        ${nextStatus && !isFinale ? `<button data-oact="advance" data-id="${o.id}">→ ${ORDER_STATUS_LABELS[nextStatus]}</button>` : ''}
+        <button data-oact="edit" data-id="${o.id}">✏️ Modifica</button>
+        <button data-oact="delete" data-id="${o.id}" style="color:var(--red)">Elimina</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  renderConsegneSettimana();
+  if(typeof checkBackupReminder === 'function') checkBackupReminder();
+}
+
+function ordChip(o){
+  const label = `${o.clienteNome ? o.clienteNome+' — ' : ''}${o.descrizione}`;
+  return `<span class="ord-chip" data-oact="scrollto" data-id="${o.id}">${label}</span>`;
+}
+
+// Finestra mobile di 7 giorni (oggi incluso), non settimana solare lun-dom: con la settimana
+// solare, una consegna di domani spariva dal riepilogo se oggi era già domenica (fine settimana).
+function renderConsegneSettimana(){
+  const cont = $('#ordini-settimana');
+  if(!cont) return;
+
+  const oggi = new Date(); oggi.setHours(0,0,0,0);
+  const fineFinestra = new Date(oggi); fineFinestra.setDate(fineFinestra.getDate()+6);
+  const oggiKey = oggi.toISOString().slice(0,10);
+
+  // solo ordini con consegna prevista impostata, ancora da consegnare fisicamente
+  const attivi = orders.filter(o=>o.dataConsegnaPrevista && o.status!=='consegnato' && o.status!=='pagato' && o.status!=='annullato');
+
+  const scaduti = attivi.filter(o=>new Date(o.dataConsegnaPrevista+'T00:00:00') < oggi)
+    .sort((a,b)=>a.dataConsegnaPrevista.localeCompare(b.dataConsegnaPrevista));
+
+  const inFinestra = attivi.filter(o=>{
+    const dd = new Date(o.dataConsegnaPrevista+'T00:00:00');
+    return dd >= oggi && dd <= fineFinestra;
+  });
+
+  const righeGiorni = [];
+  for(let i=0;i<7;i++){
+    const d = new Date(oggi); d.setDate(d.getDate()+i);
+    const key = d.toISOString().slice(0,10);
+    const items = inFinestra.filter(o=>o.dataConsegnaPrevista===key);
+    const isOggi = i===0;
+    const isDomani = i===1;
+    const label = d.toLocaleDateString('it-IT',{weekday:'long', day:'2-digit', month:'2-digit'});
+    righeGiorni.push(`
+      <div class="weeksum-row ${isOggi?'today':''}">
+        <b>${isOggi ? 'Oggi · ' : (isDomani ? 'Domani · ' : '')}${label}</b>
+        <div class="weeksum-items">${items.length ? items.map(ordChip).join('') : '<span class="muted">nessuna consegna</span>'}</div>
+      </div>`);
+  }
+
+  const rigaScaduti = scaduti.length ? `
+    <div class="weeksum-row overdue">
+      <b>⚠ Scaduti</b>
+      <div class="weeksum-items">${scaduti.map(ordChip).join('')}</div>
+    </div>` : '';
+
+  if(!rigaScaduti && !inFinestra.length){
+    cont.innerHTML = `<div class="weeksum-empty">Nessuna consegna in programma per questa settimana. 🎉</div>`;
+  } else {
+    cont.innerHTML = rigaScaduti + righeGiorni.join('');
+  }
+}
+
+function apriModificaOrdine(id){
+  const o = orders.find(x=>x.id===id);
+  if(!o) return;
+  $('#oe-title').textContent = 'Modifica ordine';
+  $('#oe-id').value = o.id;
+  $('#oe-cliente').innerHTML = '<option value="">Nessun cliente</option>' +
+    clienti.map(c=>`<option value="${c.id}" ${c.id===o.clienteId?'selected':''}>${c.nome}${c.azienda?' — '+c.azienda:''}</option>`).join('');
+  $('#oe-descrizione').value = o.descrizione || '';
+  $('#oe-imponibile').value = Number(o.imponibile||0).toFixed(2);
+  $('#oe-iva').value = Number(o.iva||0).toFixed(2);
+  $('#oe-consegna').value = o.dataConsegnaPrevista || '';
+  $('#oe-note').value = o.note || '';
+  $('#overlay-ordine-edit').style.display = 'flex';
+}
+
+function apriNuovoOrdine(){
+  $('#oe-title').textContent = 'Nuovo ordine';
+  $('#oe-id').value = '';
+  $('#oe-cliente').innerHTML = '<option value="">Nessun cliente</option>' +
+    clienti.map(c=>`<option value="${c.id}">${c.nome}${c.azienda?' — '+c.azienda:''}</option>`).join('');
+  $('#oe-descrizione').value = '';
+  $('#oe-imponibile').value = '';
+  $('#oe-iva').value = '';
+  $('#oe-consegna').value = '';
+  $('#oe-note').value = '';
+  $('#overlay-ordine-edit').style.display = 'flex';
+}
+$('#btn-ordine-add').addEventListener('click', apriNuovoOrdine);
+
+// Calcola automaticamente l'IVA in base alla percentuale impostata in "⚙️ Impostazioni",
+// ma il campo resta modificabile a mano per casi particolari (sconti, arrotondamenti...).
+$('#oe-imponibile').addEventListener('input', ()=>{
+  const imponibile = Number($('#oe-imponibile').value) || 0;
+  const ivaPct = Number($('#cfg-iva').value) || 0;
+  $('#oe-iva').value = (imponibile * ivaPct / 100).toFixed(2);
+});
+
+$('#btn-oe-cancel').addEventListener('click', ()=>$('#overlay-ordine-edit').style.display='none');
+$('#overlay-ordine-edit').addEventListener('click', e=>{ if(e.target.id==='overlay-ordine-edit') $('#overlay-ordine-edit').style.display='none'; });
+$('#btn-oe-save').addEventListener('click', async ()=>{
+  const descr = $('#oe-descrizione').value.trim();
+  if(!descr){ alert('La descrizione non può essere vuota.'); return; }
+  const imponibile = Number($('#oe-imponibile').value) || 0;
+  const iva = Number($('#oe-iva').value) || 0;
+  const clienteId = $('#oe-cliente').value || null;
+  const cliente = clienti.find(c=>c.id===clienteId);
+  const consegna = $('#oe-consegna').value || null;
+  const note = $('#oe-note').value.trim();
+  const existingId = $('#oe-id').value;
+
+  if(existingId){
+    const o = orders.find(x=>x.id===existingId);
+    if(!o) return;
+    o.descrizione = descr;
+    o.imponibile = imponibile;
+    o.iva = iva;
+    o.totale = imponibile + iva;
+    o.clienteId = cliente ? cliente.id : null;
+    o.clienteNome = cliente ? cliente.nome : null;
+    o.dataConsegnaPrevista = consegna;
+    o.note = note;
+  } else {
+    const now = new Date().toISOString();
+    orders.push({
+      id: uid(),
+      createdAt: now,
+      clienteId: cliente ? cliente.id : null,
+      clienteNome: cliente ? cliente.nome : null,
+      descrizione: descr,
+      imponibile, iva,
+      totale: imponibile + iva,
+      status: 'preventivo',
+      statusDates: { preventivo: now },
+      dataConsegnaPrevista: consegna,
+      materiali: [],
+      costoMaterialeBase: 0,
+      materialeScalato: false,
+      note
+    });
+  }
+
+  await saveOrdini();
+  $('#overlay-ordine-edit').style.display = 'none';
+  renderOrdini();
+  renderBilancio();
+  renderClienti();
+});
+
+document.addEventListener('click', async e=>{
+  const chip = e.target.closest('.ord-chip[data-oact="scrollto"]');
+  if(chip){
+    const card = document.getElementById('ordine-card-' + chip.dataset.id);
+    if(card){
+      card.scrollIntoView({behavior:'smooth', block:'center'});
+      card.classList.remove('highlight-flash');
+      void card.offsetWidth; // forza il reflow per poter ripetere l'animazione
+      card.classList.add('highlight-flash');
+    }
+    return;
+  }
+  const btn = e.target.closest('button[data-oact]');
+  if(!btn) return;
+  const id = btn.dataset.id;
+  const o = orders.find(x=>x.id===id);
+  if(!o) return;
+  if(btn.dataset.oact==='advance'){
+    const idx = ORDER_STATUS_FLOW.indexOf(o.status);
+    const next = ORDER_STATUS_FLOW[idx+1];
+    if(next) await setOrdineStato(id, next);
+  } else if(btn.dataset.oact==='edit'){
+    apriModificaOrdine(id);
+  } else if(btn.dataset.oact==='scala-materiale'){
+    const righeAvviso = o.materiali.map(m=>{
+      const spool = spools.find(s=>s.id===m.spoolId);
+      if(!spool) return `${m.coloreNome} (${m.materiale}, ${m.grammi}g) — ⚠ bobina non più presente`;
+      if(spool.pesoRim < m.grammi) return `${m.coloreNome} (${m.materiale}) — ⚠ richiesti ${m.grammi}g, disponibili solo ${spool.pesoRim}g`;
+      return `${m.coloreNome} (${m.materiale}, ${m.grammi}g)`;
+    }).join('\n');
+    const problemi = o.materiali.some(m=>{
+      const spool = spools.find(s=>s.id===m.spoolId);
+      return !spool || spool.pesoRim < m.grammi;
+    });
+    const testoAvviso = problemi
+      ? `⚠ Attenzione, alcune bobine non hanno abbastanza materiale disponibile (verrà scalato solo quanto rimasto):\n\n${righeAvviso}\n\nProcedere comunque?`
+      : `Scalare dal magazzino il materiale pianificato per "${o.descrizione}"?\n\n${righeAvviso}\n\nQuesta azione riduce il peso rimanente delle bobine e non è annullabile automaticamente.`;
+    if(!confirm(testoAvviso)) return;
+    await scalaMaterialeOrdine(id);
+  } else if(btn.dataset.oact==='delete'){
+    if(!confirm(`Eliminare l'ordine "${o.descrizione}"? Questa azione non si può annullare.`)) return;
+    orders = orders.filter(x=>x.id!==id);
+    await saveOrdini();
+    renderOrdini();
+    renderBilancio();
+    renderClienti();
+  }
+});
+document.addEventListener('change', async e=>{
+  const sel = e.target.closest('select[data-oact="status"]');
+  if(sel){ await setOrdineStato(sel.dataset.id, sel.value); return; }
+  const dateInput = e.target.closest('input[data-oact="consegna"]');
+  if(dateInput){ await setOrdineConsegnaPrevista(dateInput.dataset.id, dateInput.value); return; }
+});
+$('#ordini-search') && $('#ordini-search').addEventListener('input', renderOrdini);
+$('#ordini-filtro-stato') && $('#ordini-filtro-stato').addEventListener('change', renderOrdini);
+
+function buildPreventivo(){
+  const extra = Number($('#calc-extra').value) || 0;
+  const pre = Number($('#calc-pre').value) || 0;
+  const post = Number($('#calc-post').value) || 0;
+
+  const kwhPrice = Number($('#cfg-kwh').value) || 0;
+  const investimento = Number($('#cfg-investimento').value) || 0;
+  const anni = Number($('#cfg-anni').value) || 1;
+  const oreGiorno = Number($('#cfg-ore-giorno').value) || 1;
+  const manutPct = Number($('#cfg-manutenzione').value) || 0;
+  const scartoPct = Number($('#cfg-scarto').value) || 0;
+  const ricaricoPct = Number($('#cfg-ricarico').value) || 0;
+  const ivaPct = Number($('#cfg-iva').value) || 0;
+
+  const oreVitaUtile = anni * 365 * oreGiorno;
+  const ammortoOra = oreVitaUtile > 0 ? investimento / oreVitaUtile : 0;
+  const manutenzioneAnnua = investimento * (manutPct/100);
+  const manutenzioneOra = (365*oreGiorno) > 0 ? manutenzioneAnnua / (365*oreGiorno) : 0;
+  const overheadOraPerMacchina = ammortoOra + manutenzioneOra;
+
+  let energiaCost = 0, overheadCost = 0;
+  printerRows.forEach(row=>{
+    const watt = printerWatt(row.printer);
+    energiaCost += (watt/1000) * kwhPrice * row.ore;
+    overheadCost += overheadOraPerMacchina * row.ore;
+  });
+
+  let filamentoBase = 0;
+  calcRows.forEach(row=>{
+    const spool = spools.find(s=>s.id===row.spoolId);
+    if(!spool) return;
+    filamentoBase += (costPerKg(spool)/1000) * row.grammi;
+  });
+  // Il ricarico per il preventivo si applica sul costo base del filamento,
+  // NON su quello già maggiorato dallo scarto interno (altrimenti si sommano due volte)
+  const filamentoPreventivo = filamentoBase * (1 + ricaricoPct/100);
+
+  const imponibile = filamentoPreventivo + energiaCost + overheadCost + extra + pre + post;
+  const iva = imponibile * (ivaPct/100);
+  const totale = imponibile + iva;
+
+  const righe = [
+    ['Materiale (filamento)', filamentoPreventivo],
+    ['Energia e utilizzo macchina', energiaCost + overheadCost],
+  ];
+  if(extra>0) righe.push(['Materiali extra', extra]);
+  if(pre>0) righe.push(['Pre-produzione', pre]);
+  if(post>0) righe.push(['Post-produzione', post]);
+
+  const nomeAttivita = $('#cfg-nome-attivita').value.trim();
+  const piva = $('#cfg-piva').value.trim();
+  const email = $('#cfg-email').value.trim();
+  const telefono = $('#cfg-telefono').value.trim();
+  const indirizzo = $('#cfg-indirizzo').value.trim();
+  $('#prev-nome-attivita').textContent = nomeAttivita || 'Preventivo stampa 3D';
+  const contattiParts = [indirizzo, telefono, email, piva ? 'P.IVA/CF: '+piva : ''].filter(Boolean);
+  $('#prev-contatti').innerHTML = contattiParts.join('<br>');
+
+  $('#prev-data').textContent = new Date().toLocaleDateString('it-IT', {day:'2-digit',month:'long',year:'numeric'});
+  $('#prev-righe').innerHTML = righe.map(([label,val])=>`
+    <tr style="border-bottom:1px solid var(--line);">
+      <td style="padding:8px 0;">${label}</td>
+      <td style="padding:8px 0;text-align:right;font-family:var(--font-mono);">€${val.toFixed(2)}</td>
+    </tr>`).join('');
+  $('#prev-imponibile').textContent = '€' + imponibile.toFixed(2);
+  $('#prev-iva-label').textContent = `IVA ${ivaPct}%`;
+  $('#prev-iva').textContent = '€' + iva.toFixed(2);
+  $('#prev-totale').textContent = '€' + totale.toFixed(2);
+
+  const clienteId = $('#calc-cliente').value;
+  const cliente = clienti.find(c=>c.id===clienteId);
+  if(cliente){
+    $('#prev-cliente-block').style.display = '';
+    $('#prev-cliente-nome').textContent = cliente.nome + (cliente.azienda ? ' — '+cliente.azienda : '');
+    const cContatti = [cliente.indirizzo, cliente.telefono, cliente.email].filter(Boolean);
+    $('#prev-cliente-contatti').innerHTML = cContatti.join('<br>');
+  } else {
+    $('#prev-cliente-block').style.display = 'none';
+  }
+
+  const descrizioneParts = calcRows.map(row=>{
+    const spool = spools.find(s=>s.id===row.spoolId);
+    return spool ? `${spool.coloreNome} (${spool.materiale}, ${row.grammi}g)` : null;
+  }).filter(Boolean);
+
+  // Materiali pianificati: usati per collegare in seguito l'ordine al consumo reale di filamento
+  const materialiPianificati = calcRows.map(row=>{
+    const spool = spools.find(s=>s.id===row.spoolId);
+    if(!spool || row.grammi<=0) return null;
+    return {
+      spoolId: spool.id,
+      materiale: spool.materiale,
+      marca: spool.marca || '—',
+      coloreNome: spool.coloreNome,
+      grammi: row.grammi
+    };
+  }).filter(Boolean);
+
+  lastPreventivo = {
+    imponibile, iva, totale,
+    descrizione: descrizioneParts.join(', ') || 'Stampa 3D',
+    clienteId: cliente ? cliente.id : null,
+    clienteNome: cliente ? cliente.nome : null,
+    materiali: materialiPianificati,
+    costoMaterialeBase: filamentoBase
+  };
+}
+
+$('#btn-open-preventivo').addEventListener('click', ()=>{
+  buildPreventivo();
+  $('#overlay-preventivo').style.display = 'flex';
+});
+$('#btn-preventivo-close').addEventListener('click', ()=>$('#overlay-preventivo').style.display='none');
+$('#overlay-preventivo').addEventListener('click', e=>{ if(e.target.id==='overlay-preventivo') $('#overlay-preventivo').style.display='none'; });
+$('#btn-preventivo-print').addEventListener('click', ()=>{ window.print(); });
+$('#btn-preventivo-venduto').addEventListener('click', async ()=>{
+  if(!lastPreventivo) return;
+  const chiConfirm = lastPreventivo.clienteNome ? ` per ${lastPreventivo.clienteNome}` : '';
+  if(!confirm(`Creare un ordine di €${lastPreventivo.totale.toFixed(2)}${chiConfirm} ("${lastPreventivo.descrizione}")?\n\nL'ordine partirà con stato "Preventivo generato": potrai farlo avanzare nella pipeline (inviato, accettato, in stampa...) dalla pagina Ordini. L'incasso in Bilancio verrà conteggiato solo quando lo segnerai come "Pagato".`)) return;
+  creaOrdineDaPreventivo(lastPreventivo);
+  await saveOrdini();
+  alert('Ordine creato! Lo trovi nella pagina "Ordini"' + (lastPreventivo.clienteNome ? ' e nella scheda del cliente.' : '.'));
+  $('#overlay-preventivo').style.display = 'none';
+  renderClienti();
+  renderOrdini();
+});
+['#calc-extra','#calc-pre','#calc-post',
+ '#cfg-kwh','#cfg-investimento','#cfg-anni','#cfg-ore-giorno','#cfg-manutenzione','#cfg-scarto','#cfg-ricarico','#cfg-iva']
+  .forEach(sel=>{ $(sel).addEventListener('input', updateCalc); $(sel).addEventListener('change', updateCalc); });
+
+// I dati attività (intestazione preventivo) non influenzano il calcolo, quindi non passano da
+// updateCalc(): li salviamo direttamente al cambiamento, altrimenti resterebbero non persistiti.
+['#cfg-nome-attivita','#cfg-piva','#cfg-email','#cfg-telefono','#cfg-indirizzo']
+  .forEach(sel=>{ const el = $(sel); if(el) el.addEventListener('change', saveCostSettings); });
+
+/* ---------- TEMA (chiaro/scuro) ---------- */
+const THEME_KEY = 'theme_pref';
+function applyTheme(theme){
+  document.documentElement.setAttribute('data-theme', theme==='light' ? 'light' : 'dark');
+}
+function aggiornaBottoniTema(){
+  const theme = document.documentElement.getAttribute('data-theme') || 'dark';
+  const bScuro = $('#btn-tema-scuro'), bChiaro = $('#btn-tema-chiaro');
+  if(!bScuro || !bChiaro) return;
+  bScuro.classList.toggle('active-theme', theme==='dark');
+  bChiaro.classList.toggle('active-theme', theme==='light');
+}
+async function loadTheme(){
+  let theme = 'dark';
+  try{ const r = await storageGet(THEME_KEY); if(r && r.value) theme = r.value; }catch(e){}
+  applyTheme(theme);
+  aggiornaBottoniTema();
+}
+$('#btn-tema-scuro') && $('#btn-tema-scuro').addEventListener('click', async ()=>{
+  applyTheme('dark'); aggiornaBottoniTema(); await storageSet(THEME_KEY, 'dark');
+});
+$('#btn-tema-chiaro') && $('#btn-tema-chiaro').addEventListener('click', async ()=>{
+  applyTheme('light'); aggiornaBottoniTema(); await storageSet(THEME_KEY, 'light');
+});
+
+/* ---------- LINGUA (solo italiano per ora, predisposizione futura) ---------- */
+const LANG_KEY = 'lang_pref';
+async function loadLingua(){
+  const sel = $('#cfg-lingua');
+  if(!sel) return;
+  try{ const r = await storageGet(LANG_KEY); if(r && r.value) sel.value = r.value; }catch(e){}
+  sel.addEventListener('change', async ()=>{ await storageSet(LANG_KEY, sel.value); });
+}
+
+$('#btn-calc-apply').addEventListener('click', async ()=>{
+  if(!calcRows.length) return;
+  let names = [];
+  calcRows.forEach(row=>{
+    const spool = spools.find(s=>s.id===row.spoolId);
+    if(!spool || row.grammi<=0) return;
+    const usedG = Math.min(row.grammi, spool.pesoRim);
+    spool.pesoRim = Math.max(0, spool.pesoRim - row.grammi);
+    if(spool.stato === 'nuova') spool.stato = 'aperta';
+    spool.stato = normalizeStato(spool.stato, spool.pesoRim, spool.pesoTot);
+    logConsumption(spool, usedG, 'stampa');
+    names.push(`${spool.coloreNome} (-${row.grammi}g)`);
+  });
+  await saveSpools();
+  render();
+  $('#overlay-calc').style.display = 'none';
+  alert(`Peso scalato:\n${names.join('\n')}`);
+});
+
+loadCostSettings();
+
+/* ---------- PANNELLO CONSUMI ---------- */
+function openConsumi(){
+  const now = Date.now();
+  const day = 24*60*60*1000;
+  const last30 = consumptionLog.filter(l => now - new Date(l.date).getTime() <= 30*day);
+  const last7 = consumptionLog.filter(l => now - new Date(l.date).getTime() <= 7*day);
+
+  const totale30 = last30.reduce((a,l)=>a+l.grammi,0);
+  const totale7 = last7.reduce((a,l)=>a+l.grammi,0);
+  const mediaGiorno = totale30/30;
+
+  $('#consumi-summary').innerHTML = `
+    <div class="stat-block" style="flex:1;min-width:120px;"><div class="n">${(totale7/1000).toFixed(2)}</div><div class="l">Kg ultimi 7gg</div></div>
+    <div class="stat-block" style="flex:1;min-width:120px;"><div class="n">${(totale30/1000).toFixed(2)}</div><div class="l">Kg ultimi 30gg</div></div>
+    <div class="stat-block" style="flex:1;min-width:120px;"><div class="n">${mediaGiorno.toFixed(0)}g</div><div class="l">Media/giorno</div></div>
+    <div class="stat-block" style="flex:1;min-width:120px;"><div class="n">${consumptionLog.length}</div><div class="l">Movimenti totali</div></div>
+  `;
+
+  // consumo per giorno, ultimi 14 giorni
+  const giorni = [];
+  for(let i=13;i>=0;i--){
+    const d = new Date(now - i*day);
+    const key = d.toISOString().slice(0,10);
+    const label = d.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit'});
+    const val = consumptionLog.filter(l=>l.date.slice(0,10)===key).reduce((a,l)=>a+l.grammi,0);
+    giorni.push({label, value: val});
+  }
+  barChart('#consumi-bars-giorno', giorni, v=>v.toFixed(0)+'g');
+
+  const byMat = {};
+  last30.forEach(l=>{ byMat[l.materiale] = (byMat[l.materiale]||0) + l.grammi; });
+  barChart('#consumi-bars-materiale',
+    Object.entries(byMat).sort((a,b)=>b[1]-a[1]).map(([k,v])=>({label:k, value:v})),
+    v=>v.toFixed(0)+'g');
+
+  const byMarca = {};
+  last30.forEach(l=>{ byMarca[l.marca] = (byMarca[l.marca]||0) + l.grammi; });
+  barChart('#consumi-bars-marca',
+    Object.entries(byMarca).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([k,v])=>({label:k, value:v})),
+    v=>v.toFixed(0)+'g');
+
+  const recent = [...consumptionLog].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,40);
+  $('#consumi-lista').innerHTML = recent.map(l=>{
+    const d = new Date(l.date);
+    const dateStr = d.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'2-digit'}) + ' ' + d.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+    const src = l.source==='stampa' ? '🖨' : (l.source==='ordine' ? '📋' : '✋');
+    const ordineTag = l.orderId ? ' <span style="color:var(--muted);font-size:11px;">(ordine)</span>' : '';
+    return `<div style="padding:5px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:8px;">
+      <span>${src} ${dateStr} — ${l.coloreNome} (${l.materiale}, ${l.marca})${ordineTag}</span>
+      <b style="color:var(--amber);flex-shrink:0;">-${l.grammi}g</b>
+    </div>`;
+  }).join('') || '<div style="color:var(--muted);">Nessun movimento registrato ancora.</div>';
+
+  $('#overlay-consumi').style.display = 'flex';
+}
+$('#btn-consumi').addEventListener('click', openConsumi);
+$('#btn-consumi-close').addEventListener('click', ()=>$('#overlay-consumi').style.display='none');
+$('#overlay-consumi').addEventListener('click', e=>{ if(e.target.id==='overlay-consumi') $('#overlay-consumi').style.display='none'; });
+$('#btn-consumi-clear').addEventListener('click', async ()=>{
+  if(!confirm('Azzerare tutto lo storico dei consumi? Questa azione non si può annullare.')) return;
+  consumptionLog = [];
+  await saveConsumptionLog();
+  openConsumi();
+});
+
+/* ---------- AVVIO ---------- */
+loadTheme();
+loadLingua();
+loadConsumptionLog();
+loadPrinterFleet();
+loadRicambi();
+loadRicambiPurchaseLog();
+loadClienti().then(()=>populateClienteSelect());
+Promise.all([loadSpools(), loadSalesLog(), loadOrdini(), loadClienti()]).then(async ()=>{
+  await migrateSalesLogToOrdiniIfNeeded();
+  renderOrdini();
+  renderBilancio();
+  checkBackupReminder();
+});
+</script>
+</body>
+</html>
