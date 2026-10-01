@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SpoolBase — Le tue bobine</title>
+<style>
+  :root {
+    --bg: #17181c;
+    --surface: #212226;
+    --surface-raised: #2a2b30;
+    --border: #35363c;
+    --text: #edebe4;
+    --text-dim: #8f9096;
+    --accent: #3fb6a8;
+    --accent-strong: #56d6c6;
+    --accent-text: #0d211f;
+    --warn: #e8a33d;
+    --danger: #e2604f;
+    --danger-strong: #ef8272;
+    --radius: 14px;
+    --radius-sm: 9px;
+    --font-display: "Avenir Next", "Segoe UI Semibold", "Helvetica Neue", Arial, sans-serif;
+    --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  }
+
+  [data-theme="light"] {
+    --bg: #f5f3ee;
+    --surface: #ffffff;
+    --surface-raised: #fbfaf7;
+    --border: #e2ded2;
+    --text: #201f1d;
+    --text-dim: #6b6a66;
+    --accent: #1f8e82;
+    --accent-strong: #17726a;
+    --accent-text: #f2fbfa;
+    --warn: #b97a1f;
+    --danger: #c14b3b;
+    --danger-strong: #a83c2e;
+  }
+
+  * { box-sizing: border-box; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+
+  a { color: var(--accent); }
+
+  .wrap {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 28px 20px 80px;
+  }
+
+  /* Header */
+  header.top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+
+  .brand { display: flex; align-items: center; gap: 12px; }
+
+  .brand svg { flex-shrink: 0; }
+
+  .brand h1 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 22px;
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
+
+  .brand p {
+    margin: 2px 0 0;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  .top-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+  button {
+    font-family: var(--font-body);
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: var(--radius-sm);
+    padding: 9px 14px;
+    font-size: 13.5px;
+    font-weight: 600;
+    transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+  }
+  button:hover { border-color: var(--accent); }
+  button:active { transform: translateY(1px); }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  button.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-text);
+  }
+  button.primary:hover { background: var(--accent-strong); border-color: var(--accent-strong); }
+
+  button.ghost {
+    background: transparent;
+    border-color: transparent;
+    color: var(--text-dim);
+    padding: 9px 10px;
+  }
+  button.ghost:hover { color: var(--text); border-color: var(--border); }
+
+  button.danger-ghost { color: var(--danger); }
+  button.danger-ghost:hover { border-color: var(--danger); }
+
+  /* Backup banner */
+  .banner {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: var(--surface);
+    border: 1px solid var(--warn);
+    border-radius: var(--radius-sm);
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    font-size: 13.5px;
+    flex-wrap: wrap;
+  }
+  .banner.show { display: flex; }
+  .banner strong { color: var(--warn); }
+
+  /* Stats */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+  }
+  .stat .num {
+    font-family: var(--font-mono);
+    font-size: 24px;
+    font-weight: 700;
+  }
+  .stat .lbl {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+
+  /* Toolbar */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+  }
+
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-dim);
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 12.5px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .chip.active { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--surface)); }
+
+  select#sortSelect {
+    font-family: var(--font-body);
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+
+  /* Grid */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(268px, 1fr));
+    gap: 14px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .card-top { display: flex; gap: 12px; align-items: center; }
+
+  .gauge-wrap { position: relative; width: 68px; height: 68px; flex-shrink: 0; }
+  .gauge-wrap svg { transform: rotate(-90deg); }
+  .gauge-pct {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .card-id { flex: 1; min-width: 0; }
+  .card-id .brand-name {
+    font-weight: 700;
+    font-size: 15px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .card-id .color-name {
+    font-size: 12.5px;
+    color: var(--text-dim);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .badge-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .badge {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: var(--surface-raised);
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+  }
+  .badge.status-nuova { color: var(--accent); border-color: var(--accent); }
+  .badge.status-esaurita { color: var(--danger); border-color: var(--danger); }
+  .badge.status-bassa { color: var(--warn); border-color: var(--warn); }
+
+  .weight-line {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+  .weight-line b { color: var(--text); font-weight: 700; }
+
+  .card-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 4px;
+  }
+  .card-actions button { flex: 1; }
+
+  /* Empty state */
+  .empty {
+    text-align: center;
+    padding: 60px 20px;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+    color: var(--text-dim);
+  }
+  .empty h2 { color: var(--text); font-family: var(--font-display); margin-bottom: 6px; }
+
+  /* Modal */
+  .overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    align-items: flex-start;
+    justify-content: center;
+    padding: 40px 16px;
+    overflow-y: auto;
+    z-index: 100;
+  }
+  .overlay.show { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    width: 100%;
+    max-width: 460px;
+    padding: 22px;
+  }
+  .modal h2 { font-family: var(--font-display); margin: 0 0 4px; font-size: 19px; }
+  .modal .sub { color: var(--text-dim); font-size: 13px; margin-bottom: 18px; }
+
+  .field { margin-bottom: 14px; }
+  .field label {
+    display: block;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--text-dim);
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+  .field input[type="text"],
+  .field input[type="number"],
+  .field input[type="date"],
+  .field select,
+  .field textarea {
+    width: 100%;
+    font-family: var(--font-body);
+    background: var(--surface-raised);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: var(--radius-sm);
+    padding: 9px 11px;
+    font-size: 14px;
+  }
+  .field input:focus-visible, .field select:focus-visible, .field textarea:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+  .field-row { display: flex; gap: 10px; }
+  .field-row .field { flex: 1; }
+
+  .color-field { display: flex; gap: 8px; align-items: center; }
+  .color-field input[type="color"] {
+    width: 42px; height: 38px; padding: 0; border: 1px solid var(--border);
+    border-radius: var(--radius-sm); background: var(--surface-raised); cursor: pointer;
+  }
+
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
+
+  /* History modal */
+  .history-list { max-height: 260px; overflow-y: auto; margin: 12px 0; }
+  .history-item {
+    display: flex; justify-content: space-between; gap: 8px;
+    padding: 8px 0; border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .history-item:last-child { border-bottom: none; }
+  .history-item .g { font-family: var(--font-mono); font-weight: 700; color: var(--danger); }
+  .history-item .meta { color: var(--text-dim); font-size: 12px; }
+
+  footer.foot {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 12px;
+    margin-top: 50px;
+  }
+
+  @media (max-width: 480px) {
+    .wrap { padding: 18px 14px 60px; }
+    .stats { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <svg width="38" height="38" viewBox="0 0 38 38" fill="none">
+        <circle cx="19" cy="19" r="17" stroke="var(--accent)" stroke-width="3"/>
+        <circle cx="19" cy="19" r="6" fill="var(--accent)"/>
+        <circle cx="19" cy="19" r="17" stroke="var(--border)" stroke-width="3" stroke-dasharray="18 90" stroke-dashoffset="0"/>
+      </svg>
+      <div>
+        <h1>SpoolBase</h1>
+        <p>Bobine e consumo — versione base</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <button class="ghost" id="themeToggle" title="Cambia tema" aria-label="Cambia tema">🌓</button>
+      <button id="exportBtn">Esporta backup</button>
+      <button id="importBtn">Importa</button>
+      <input type="file" id="importFile" accept="application/json" style="display:none">
+      <button class="primary" id="addBtn">+ Nuova bobina</button>
+    </div>
+  </header>
+
+  <div class="banner" id="backupBanner">
+    <span><strong>Promemoria:</strong> non esporti un backup da un po'. I dati vivono solo in questo browser — esportane uno per non perderli.</span>
+    <button id="bannerExportBtn">Esporta ora</button>
+  </div>
+
+  <section class="stats">
+    <div class="stat"><div class="num" id="statCount">0</div><div class="lbl">Bobine registrate</div></div>
+    <div class="stat"><div class="num" id="statWeight">0 g</div><div class="lbl">Materiale rimanente</div></div>
+    <div class="stat"><div class="num" id="statValue">—</div><div class="lbl">Valore stimato magazzino</div></div>
+    <div class="stat"><div class="num" id="statLow">0</div><div class="lbl">In esaurimento</div></div>
+  </section>
+
+  <div class="toolbar">
+    <div class="chips" id="materialChips"></div>
+    <select id="sortSelect">
+      <option value="recent">Più recenti</option>
+      <option value="name">Nome A-Z</option>
+      <option value="remaining-asc">Rimanenza crescente</option>
+      <option value="remaining-desc">Rimanenza decrescente</option>
+    </select>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="empty" id="emptyState" style="display:none">
+    <h2>Nessuna bobina ancora</h2>
+    <p>Registra la tua prima bobina per iniziare a tracciare scorte e consumo.</p>
+    <br>
+    <button class="primary" id="emptyAddBtn">+ Registra una bobina</button>
+  </div>
+
+  <footer class="foot">SpoolBase · i dati restano nel tuo browser, esporta backup regolarmente</footer>
+</div>
+
+<!-- Modal: add/edit spool -->
+<div class="overlay" id="spoolOverlay">
+  <div class="modal">
+    <h2 id="spoolModalTitle">Nuova bobina</h2>
+    <div class="sub">I campi con * sono obbligatori.</div>
+    <form id="spoolForm">
+      <input type="hidden" id="spoolId">
+      <div class="field-row">
+        <div class="field">
+          <label for="fBrand">Marca *</label>
+          <input type="text" id="fBrand" required placeholder="es. Sunlu">
+        </div>
+        <div class="field">
+          <label for="fMaterial">Materiale *</label>
+          <select id="fMaterial" required></select>
+        </div>
+      </div>
+      <div class="field">
+        <label for="fColorName">Nome colore *</label>
+        <div class="color-field">
+          <input type="color" id="fColorHex" value="#3fb6a8">
+          <input type="text" id="fColorName" required placeholder="es. Verde acqua" style="flex:1">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="fDiameter">Diametro</label>
+          <select id="fDiameter">
+            <option value="1.75">1.75 mm</option>
+            <option value="2.85">2.85 mm</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="fTotal">Peso totale (g) *</label>
+          <input type="number" id="fTotal" required min="1" step="1" placeholder="1000">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="fRemaining">Peso rimanente (g)</label>
+          <input type="number" id="fRemaining" min="0" step="1" placeholder="uguale al totale se nuova">
+        </div>
+        <div class="field">
+          <label for="fPrice">Prezzo (€/kg)</label>
+          <input type="number" id="fPrice" min="0" step="0.1" placeholder="opzionale">
+        </div>
+      </div>
+      <div class="field">
+        <label for="fNotes">Note</label>
+        <textarea id="fNotes" rows="2" placeholder="opzionale"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="ghost" id="spoolCancelBtn">Annulla</button>
+        <button type="submit" class="primary">Salva bobina</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: log usage / history -->
+<div class="overlay" id="usageOverlay">
+  <div class="modal">
+    <h2 id="usageModalTitle">Registra utilizzo</h2>
+    <div class="sub" id="usageModalSub"></div>
+
+    <form id="usageForm">
+      <input type="hidden" id="usageSpoolId">
+      <div class="field-row">
+        <div class="field">
+          <label for="uGrams">Grammi usati *</label>
+          <input type="number" id="uGrams" required min="1" step="1" placeholder="es. 45">
+        </div>
+        <div class="field">
+          <label for="uDate">Data</label>
+          <input type="date" id="uDate">
+        </div>
+      </div>
+      <div class="field">
+        <label for="uNote">Nota</label>
+        <input type="text" id="uNote" placeholder="es. supporto stampante, prototipo...">
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="ghost" id="usageCancelBtn">Chiudi</button>
+        <button type="submit" class="primary">Registra</button>
+      </div>
+    </form>
+
+    <div class="history-list" id="historyList"></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---------- Storage: works standalone (localStorage) or as a Claude.ai artifact (window.storage) ----------
+  const hasCloudStorage = typeof window.storage !== "undefined";
+
+  async function saveData(key, value) {
+    const json = JSON.stringify(value);
+    if (hasCloudStorage) {
+      try { await window.storage.set(key, json, false); return; } catch (e) { /* fall through */ }
+    }
+    try { localStorage.setItem(key, json); } catch (e) { console.error("Storage error", e); }
+  }
+
+  async function loadData(key, fallback) {
+    if (hasCloudStorage) {
+      try {
+        const r = await window.storage.get(key);
+        return r ? JSON.parse(r.value) : fallback;
+      } catch (e) { return fallback; }
+    }
+    try {
+      const v = localStorage.getItem(key);
+      return v ? JSON.parse(v) : fallback;
+    } catch (e) { return fallback; }
+  }
+
+  // ---------- Materials — a sensible set for hobbyists, not an industrial catalogue ----------
+  const MATERIALS = ["PLA", "PLA+", "PETG", "ABS", "ASA", "TPU", "PC", "Nylon (PA)", "Altro"];
+  const LOW_STOCK_THRESHOLD_G = 150;
+
+  // ---------- State ----------
+  let spools = [];
+  let usage = [];
+  let activeMaterialFilter = "all";
+  let sortMode = "recent";
+
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
+  // ---------- Init ----------
+  async function init() {
+    spools = await loadData("core:spools", []);
+    usage = await loadData("core:usage", []);
+    const lastExport = await loadData("core:lastExport", null);
+    const theme = await loadData("core:theme", "dark");
+    document.documentElement.setAttribute("data-theme", theme);
+
+    populateMaterialSelect();
+    populateMaterialChips();
+    checkBackupBanner(lastExport);
+    render();
+    wireEvents();
+  }
+
+  function populateMaterialSelect() {
+    const sel = document.getElementById("fMaterial");
+    sel.innerHTML = MATERIALS.map(m => `<option value="${m}">${m}</option>`).join("");
+  }
+
+  function populateMaterialChips() {
+    const wrap = document.getElementById("materialChips");
+    const present = ["all", ...MATERIALS];
+    wrap.innerHTML = present.map(m => {
+      const label = m === "all" ? "Tutti" : m;
+      return `<button type="button" class="chip${m === activeMaterialFilter ? " active" : ""}" data-material="${m}">${label}</button>`;
+    }).join("");
+    wrap.querySelectorAll(".chip").forEach(chip => {
+      chip.addEventListener("click", () => {
+        activeMaterialFilter = chip.dataset.material;
+        populateMaterialChips();
+        render();
+      });
+    });
+  }
+
+  function checkBackupBanner(lastExport) {
+    const banner = document.getElementById("backupBanner");
+    if (spools.length === 0) { banner.classList.remove("show"); return; }
+    const days = lastExport ? (Date.now() - lastExport) / 86400000 : Infinity;
+    if (days > 7) banner.classList.add("show");
+  }
+
+  // ---------- Derived ----------
+  function statusOf(s) {
+    if (s.remaining <= 0) return "esaurita";
+    if (s.remaining >= s.total) return "nuova";
+    if (s.remaining < LOW_STOCK_THRESHOLD_G) return "bassa";
+    return "aperta";
+  }
+
+  function statusLabel(status) {
+    return { nuova: "Nuova", aperta: "Aperta", bassa: "In esaurimento", esaurita: "Esaurita" }[status] || status;
+  }
+
+  // ---------- Render ----------
+  function render() {
+    renderStats();
+    renderGrid();
+  }
+
+  function renderStats() {
+    document.getElementById("statCount").textContent = spools.length;
+    const totalRemaining = spools.reduce((a, s) => a + s.remaining, 0);
+    document.getElementById("statWeight").textContent = formatGrams(totalRemaining);
+
+    const withPrice = spools.filter(s => s.pricePerKg);
+    if (withPrice.length === 0) {
+      document.getElementById("statValue").textContent = "—";
+    } else {
+      const value = withPrice.reduce((a, s) => a + (s.remaining / 1000) * s.pricePerKg, 0);
+      document.getElementById("statValue").textContent = "€ " + value.toFixed(2);
+    }
+
+    const low = spools.filter(s => statusOf(s) === "bassa" || statusOf(s) === "esaurita").length;
+    document.getElementById("statLow").textContent = low;
+  }
+
+  function formatGrams(g) {
+    if (g >= 1000) return (g / 1000).toFixed(g % 1000 === 0 ? 0 : 1) + " kg";
+    return Math.round(g) + " g";
+  }
+
+  function getFilteredSorted() {
+    let list = spools.slice();
+    if (activeMaterialFilter !== "all") {
+      list = list.filter(s => s.material === activeMaterialFilter);
+    }
+    switch (sortMode) {
+      case "name":
+        list.sort((a, b) => (a.brand + a.colorName).localeCompare(b.brand + b.colorName));
+        break;
+      case "remaining-asc":
+        list.sort((a, b) => a.remaining - b.remaining);
+        break;
+      case "remaining-desc":
+        list.sort((a, b) => b.remaining - a.remaining);
+        break;
+      default:
+        list.sort((a, b) => b.createdAt - a.createdAt);
+    }
+    return list;
+  }
+
+  function renderGrid() {
+    const grid = document.getElementById("grid");
+    const empty = document.getElementById("emptyState");
+    const list = getFilteredSorted();
+
+    if (spools.length === 0) {
+      grid.innerHTML = "";
+      empty.style.display = "block";
+      return;
+    }
+    empty.style.display = "none";
+
+    grid.innerHTML = list.map(s => cardHtml(s)).join("");
+
+    grid.querySelectorAll("[data-action]").forEach(el => {
+      el.addEventListener("click", () => {
+        const action = el.dataset.action;
+        const id = el.dataset.id;
+        if (action === "log") openUsageModal(id);
+        if (action === "edit") openSpoolModal(id);
+        if (action === "delete") deleteSpool(id);
+      });
+    });
+  }
+
+  function cardHtml(s) {
+    const status = statusOf(s);
+    const frac = s.total > 0 ? Math.max(0, Math.min(1, s.remaining / s.total)) : 0;
+    const r = 26, circ = 2 * Math.PI * r;
+    const dash = frac * circ;
+
+    return `
+      <div class="card">
+        <div class="card-top">
+          <div class="gauge-wrap">
+            <svg width="68" height="68" viewBox="0 0 68 68">
+              <circle cx="34" cy="34" r="${r}" fill="none" stroke="var(--border)" stroke-width="8"/>
+              <circle cx="34" cy="34" r="${r}" fill="none" stroke="${s.colorHex}" stroke-width="8"
+                stroke-dasharray="${dash.toFixed(1)} ${circ.toFixed(1)}" stroke-linecap="round"/>
+            </svg>
+            <div class="gauge-pct">${Math.round(frac * 100)}%</div>
+          </div>
+          <div class="card-id">
+            <div class="brand-name">${escapeHtml(s.brand)}</div>
+            <div class="color-name">${escapeHtml(s.colorName)}</div>
+          </div>
+        </div>
+        <div class="badge-row">
+          <span class="badge">${escapeHtml(s.material)}</span>
+          <span class="badge">${s.diameter} mm</span>
+          <span class="badge status-${status}">${statusLabel(status)}</span>
+        </div>
+        <div class="weight-line"><b>${formatGrams(s.remaining)}</b> / ${formatGrams(s.total)}</div>
+        <div class="card-actions">
+          <button data-action="log" data-id="${s.id}">Registra uso</button>
+          <button class="ghost" data-action="edit" data-id="${s.id}" aria-label="Modifica">✎</button>
+          <button class="ghost danger-ghost" data-action="delete" data-id="${s.id}" aria-label="Elimina">🗑</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+
+  // ---------- Spool CRUD ----------
+  function openSpoolModal(id) {
+    const overlay = document.getElementById("spoolOverlay");
+    const form = document.getElementById("spoolForm");
+    form.reset();
+    document.getElementById("fDiameter").value = "1.75";
+
+    if (id) {
+      const s = spools.find(x => x.id === id);
+      document.getElementById("spoolModalTitle").textContent = "Modifica bobina";
+      document.getElementById("spoolId").value = s.id;
+      document.getElementById("fBrand").value = s.brand;
+      document.getElementById("fMaterial").value = s.material;
+      document.getElementById("fColorHex").value = s.colorHex;
+      document.getElementById("fColorName").value = s.colorName;
+      document.getElementById("fDiameter").value = s.diameter;
+      document.getElementById("fTotal").value = s.total;
+      document.getElementById("fRemaining").value = s.remaining;
+      document.getElementById("fPrice").value = s.pricePerKg || "";
+      document.getElementById("fNotes").value = s.notes || "";
+    } else {
+      document.getElementById("spoolModalTitle").textContent = "Nuova bobina";
+      document.getElementById("spoolId").value = "";
+    }
+    overlay.classList.add("show");
+    document.getElementById("fBrand").focus();
+  }
+
+  function closeSpoolModal() {
+    document.getElementById("spoolOverlay").classList.remove("show");
+  }
+
+  async function saveSpoolForm(e) {
+    e.preventDefault();
+    const id = document.getElementById("spoolId").value;
+    const total = parseFloat(document.getElementById("fTotal").value);
+    const remainingRaw = document.getElementById("fRemaining").value;
+    const remaining = remainingRaw === "" ? total : parseFloat(remainingRaw);
+
+    const data = {
+      brand: document.getElementById("fBrand").value.trim(),
+      material: document.getElementById("fMaterial").value,
+      colorHex: document.getElementById("fColorHex").value,
+      colorName: document.getElementById("fColorName").value.trim(),
+      diameter: document.getElementById("fDiameter").value,
+      total,
+      remaining: Math.min(remaining, total),
+      pricePerKg: parseFloat(document.getElementById("fPrice").value) || null,
+      notes: document.getElementById("fNotes").value.trim()
+    };
+
+    if (id) {
+      const s = spools.find(x => x.id === id);
+      Object.assign(s, data);
+    } else {
+      spools.push({ id: uid(), createdAt: Date.now(), ...data });
+    }
+
+    await saveData("core:spools", spools);
+    closeSpoolModal();
+    populateMaterialChips();
+    render();
+  }
+
+  async function deleteSpool(id) {
+    const s = spools.find(x => x.id === id);
+    if (!s) return;
+    if (!confirm(`Eliminare la bobina "${s.brand} — ${s.colorName}"? L'operazione non è reversibile.`)) return;
+    spools = spools.filter(x => x.id !== id);
+    usage = usage.filter(u => u.spoolId !== id);
+    await saveData("core:spools", spools);
+    await saveData("core:usage", usage);
+    render();
+  }
+
+  // ---------- Usage log ----------
+  function openUsageModal(id) {
+    const s = spools.find(x => x.id === id);
+    document.getElementById("usageSpoolId").value = id;
+    document.getElementById("usageModalTitle").textContent = "Registra utilizzo";
+    document.getElementById("usageModalSub").textContent = `${s.brand} — ${s.colorName} · rimangono ${formatGrams(s.remaining)}`;
+    document.getElementById("uGrams").value = "";
+    document.getElementById("uNote").value = "";
+    document.getElementById("uDate").value = new Date().toISOString().slice(0, 10);
+    renderHistory(id);
+    document.getElementById("usageOverlay").classList.add("show");
+    document.getElementById("uGrams").focus();
+  }
+
+  function closeUsageModal() {
+    document.getElementById("usageOverlay").classList.remove("show");
+  }
+
+  function renderHistory(spoolId) {
+    const list = usage.filter(u => u.spoolId === spoolId).sort((a, b) => b.createdAt - a.createdAt);
+    const el = document.getElementById("historyList");
+    if (list.length === 0) {
+      el.innerHTML = `<div class="meta">Nessun utilizzo registrato finora.</div>`;
+      return;
+    }
+    el.innerHTML = list.map(u => `
+      <div class="history-item">
+        <div>
+          <div>${escapeHtml(u.note || "Utilizzo")}</div>
+          <div class="meta">${u.date}</div>
+        </div>
+        <div class="g">-${u.grams} g</div>
+      </div>
+    `).join("");
+  }
+
+  async function saveUsageForm(e) {
+    e.preventDefault();
+    const spoolId = document.getElementById("usageSpoolId").value;
+    const grams = parseFloat(document.getElementById("uGrams").value);
+    const s = spools.find(x => x.id === spoolId);
+    if (!s || !grams || grams <= 0) return;
+
+    if (grams > s.remaining) {
+      if (!confirm(`Hai inserito ${grams} g ma ne restano solo ${Math.round(s.remaining)}. Registrare comunque (la bobina risulterà esaurita)?`)) return;
+    }
+
+    s.remaining = Math.max(0, s.remaining - grams);
+    usage.push({
+      id: uid(),
+      spoolId,
+      grams,
+      date: document.getElementById("uDate").value || new Date().toISOString().slice(0, 10),
+      note: document.getElementById("uNote").value.trim(),
+      createdAt: Date.now()
+    });
+
+    await saveData("core:spools", spools);
+    await saveData("core:usage", usage);
+    document.getElementById("uGrams").value = "";
+    document.getElementById("uNote").value = "";
+    renderHistory(spoolId);
+    render();
+    document.getElementById("usageModalSub").textContent = `${s.brand} — ${s.colorName} · rimangono ${formatGrams(s.remaining)}`;
+  }
+
+  // ---------- Backup export/import ----------
+  async function exportBackup() {
+    const payload = {
+      type: "spoolbase-core-backup",
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      spools,
+      usage
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `spoolbase-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    await saveData("core:lastExport", Date.now());
+    document.getElementById("backupBanner").classList.remove("show");
+  }
+
+  function importBackup(file) {
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        const payload = JSON.parse(reader.result);
+        if (!payload || !Array.isArray(payload.spools)) throw new Error("formato non valido");
+        if (!confirm(`Importare ${payload.spools.length} bobine? Questo sostituirà i dati attuali in questo browser.`)) return;
+        spools = payload.spools;
+        usage = Array.isArray(payload.usage) ? payload.usage : [];
+        await saveData("core:spools", spools);
+        await saveData("core:usage", usage);
+        populateMaterialChips();
+        render();
+        alert("Importazione completata.");
+      } catch (err) {
+        alert("File non valido: " + err.message);
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  // ---------- Events ----------
+  function wireEvents() {
+    document.getElementById("addBtn").addEventListener("click", () => openSpoolModal(null));
+    document.getElementById("emptyAddBtn").addEventListener("click", () => openSpoolModal(null));
+    document.getElementById("spoolCancelBtn").addEventListener("click", closeSpoolModal);
+    document.getElementById("spoolForm").addEventListener("submit", saveSpoolForm);
+    document.getElementById("spoolOverlay").addEventListener("click", e => { if (e.target.id === "spoolOverlay") closeSpoolModal(); });
+
+    document.getElementById("usageCancelBtn").addEventListener("click", closeUsageModal);
+    document.getElementById("usageForm").addEventListener("submit", saveUsageForm);
+    document.getElementById("usageOverlay").addEventListener("click", e => { if (e.target.id === "usageOverlay") closeUsageModal(); });
+
+    document.getElementById("exportBtn").addEventListener("click", exportBackup);
+    document.getElementById("bannerExportBtn").addEventListener("click", exportBackup);
+    document.getElementById("importBtn").addEventListener("click", () => document.getElementById("importFile").click());
+    document.getElementById("importFile").addEventListener("change", e => {
+      if (e.target.files[0]) importBackup(e.target.files[0]);
+      e.target.value = "";
+    });
+
+    document.getElementById("sortSelect").addEventListener("change", e => {
+      sortMode = e.target.value;
+      render();
+    });
+
+    document.getElementById("themeToggle").addEventListener("click", async () => {
+      const current = document.documentElement.getAttribute("data-theme");
+      const next = current === "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", next);
+      await saveData("core:theme", next);
+    });
+
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape") { closeSpoolModal(); closeUsageModal(); }
+    });
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>

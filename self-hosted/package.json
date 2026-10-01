@@ -1,0 +1,19 @@
+{
+  "name": "spoolbase-backend",
+  "version": "1.0.0",
+  "description": "Self-hosted backend (Express + SQLite) for SpoolBase - full feature set: multi-user, printer fleet, orders, spool inventory.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^11.3.0",
+    "express": "^4.19.2",
+    "express-rate-limit": "^8.6.2",
+    "qrcode": "^1.5.4"
+  },
+  "allowScripts": {
+    "better-sqlite3@11.10.0": true
+  }
+}
